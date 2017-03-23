@@ -1,0 +1,11 @@
+version: "2"
+services:
+  app:
+    build: .
+    environment:
+      - NODE_ENV=development
+      - CHROME_HOST=chrome
+    ports:
+      - "8080:8080"
+  chrome:
+    image: yukinying/chrome-headless
