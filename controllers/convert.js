@@ -4,7 +4,7 @@ const router = require('express').Router();
 const debug = require('debug')('controllers:index');
 const render = require('../middleware/render');
 const validate = require('../middleware/validate');
-const Model = require('../models');
+const Model = require('../models/converter');
 
 module.exports = router.post('/',
   validate,

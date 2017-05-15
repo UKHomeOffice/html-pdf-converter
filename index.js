@@ -5,7 +5,7 @@ const bodyParser = require('body-parser');
 const churchill = require('churchill');
 const logger = require('hof-logger')();
 const config = require('./config');
-const controller = require('./controllers');
+const controller = require('./controllers/convert');
 const errorHandler = require('./middleware/error-handler');
 
 if (config.env === 'production') {

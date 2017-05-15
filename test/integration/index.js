@@ -20,11 +20,11 @@ const clientStub = {
 const chromeStub = sinon.stub().resolves(clientStub);
 chromeStub.onCall(0).rejects({code: 'ECONNREFUSED'});
 
-proxyquire('../../models/', {
+proxyquire('../../models/converter', {
   'chrome-remote-interface': chromeStub
 });
 
-proxyquire('../../controllers/', {
+proxyquire('../../controllers/convert', {
   '../middleware/render': renderStub
 });
 

@@ -12,9 +12,9 @@
   "main": "index.js",
   "scripts": {
     "start": "node .",
-    "test": "mocha",
+    "unit": "mocha",
     "lint": "eslint .",
-    "ci": "npm test && npm lint"
+    "test": "npm run unit && npm run lint"
   },
   "dependencies": {
     "body-parser": "^1.17.1",
@@ -36,7 +36,6 @@
     "supertest": "^3.0.0"
   },
   "pre-commit": [
-    "lint",
     "test"
   ]
 }
