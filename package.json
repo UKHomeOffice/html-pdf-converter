@@ -1,0 +1,41 @@
+{
+  "name": "html-pdf-converter",
+  "description": "An HTML to PDF conversion service wrapper",
+  "version": "1.0.0",
+  "license": "MIT",
+  "author": "Joe Chapman joseph@creatify.io",
+  "repository": "git+https://github.com/UKHomeOffice/html-pdf-converter.git",
+  "bugs": {
+    "url": "https://github.com/UKHomeOffice/html-pdf-converter/issues"
+  },
+  "homepage": "https://github.com/UKHomeOffice/html-pdf-converter#readme",
+  "main": "index.js",
+  "scripts": {
+    "start": "node .",
+    "unit": "mocha",
+    "lint": "eslint .",
+    "test": "npm run unit && npm run lint"
+  },
+  "dependencies": {
+    "body-parser": "^1.17.1",
+    "chrome-remote-interface": "^0.21.0",
+    "churchill": "^1.0.0",
+    "debug": "^2.6.3",
+    "express": "^4.15.2",
+    "hof-logger": "^1.0.2",
+    "lodash": "^4.17.4",
+    "mustache": "^2.3.0"
+  },
+  "devDependencies": {
+    "eslint": "^3.14.0",
+    "eslint-config-homeoffice": "^2.1.0",
+    "mocha": "^3.2.0",
+    "pre-commit": "^1.2.2",
+    "proxyquire": "^1.7.11",
+    "sinon": "^2.1.0",
+    "supertest": "^3.0.0"
+  },
+  "pre-commit": [
+    "test"
+  ]
+}
