@@ -28,8 +28,6 @@ pipeline:
       event: push
 
 services:
-  chrome-headless:
-    image: yukinying/chrome-headless
   dind:
     image: docker:1.11-dind
     privileged: true
