@@ -30,8 +30,6 @@ cd html-pdf-converter
 docker-compose build;docker-compose up
 ```
 
------------------------------------------------------
-
 ## Example usage
 
 Mustache and Data
@@ -80,6 +78,11 @@ Response (example)
 ```bash
 %PDF-1.4\n1 0 obj\n<<\n/Title ...
 ```
+
+## External Resources
+
+This service cannot resolve external resources such as linked CSS, JavaScript or images.
+If your template includes links to any of these resources, we suggest you use [https://github.com/remy/inliner](https://github.com/remy/inliner). The source for Inliner can be a URL, a file location or an HTML string.
 
 ## Environment Variables
 
