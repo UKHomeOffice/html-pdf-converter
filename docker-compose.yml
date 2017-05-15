@@ -6,6 +6,6 @@ services:
       - NODE_ENV=development
       - CHROME_HOST=chrome
     ports:
-      - "8080:8080"
+      - "8001:8001"
   chrome:
     image: yukinying/chrome-headless
