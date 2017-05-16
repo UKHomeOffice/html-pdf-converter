@@ -20,6 +20,7 @@ pipeline:
     environment:
       - DOCKER_HOST=tcp://127.0.0.1:2375
     commands:
+      - docker build -t html-pdf-converter .
       - docker login -u="ukhomeofficedigital+html_pdf_converter" -p=${DOCKER_PASSWORD} quay.io
       - docker tag html-pdf-converter quay.io/ukhomeofficedigital/html-pdf-converter:${DRONE_COMMIT_SHA}
       - docker push quay.io/ukhomeofficedigital/html-pdf-converter:${DRONE_COMMIT_SHA}
