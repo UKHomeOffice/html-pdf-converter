@@ -3,14 +3,14 @@
 const app = require('express')();
 const bodyParser = require('body-parser');
 const churchill = require('churchill');
-const logger = require('hof-logger')();
 const config = require('./config');
+const logger = require('hof-logger')({
+  loglevel: config.loglevel || 'info'
+});
 const controller = require('./controllers/convert');
 const errorHandler = require('./middleware/error-handler');
 
-if (config.env === 'production') {
-  app.use(churchill(logger));
-}
+app.use(churchill(logger));
 
 app.use(bodyParser.json());
 

@@ -5,6 +5,7 @@ const debug = require('debug')('middleware:validate');
 const ValidationError = require('../lib/validation-error');
 
 module.exports = (req, res, next) => {
+  req.log('debug', 'Validating request');
   const template = req.body.template;
   let missing;
 

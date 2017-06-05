@@ -14,5 +14,6 @@ module.exports = (error, req, res, next) => {
   } else {
     res.status(500);
   }
+  req.log('error', 'html-pdf-converter: Handling error', error);
   res.json(error);
 };
