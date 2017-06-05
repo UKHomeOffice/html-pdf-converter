@@ -8,6 +8,7 @@ describe('middleware/validate', () => {
   describe('called with no template', () => {
 
     const req = {
+      log: sinon.stub(),
       body: {
         template: undefined
       }
@@ -28,6 +29,7 @@ describe('middleware/validate', () => {
   describe('called with a template that is not a string', () => {
 
     const req = {
+      log: sinon.stub(),
       body: {
         template: 1234
       }
@@ -48,6 +50,7 @@ describe('middleware/validate', () => {
   describe('called with a mustache template and missing data', () => {
 
     const req = {
+      log: sinon.stub(),
       body: {
         template: '<p>{{content}}</p>',
         data: {}
@@ -69,6 +72,7 @@ describe('middleware/validate', () => {
   describe('called with a HTML template string', () => {
 
     const req = {
+      log: sinon.stub(),
       body: {
         template: '<p>Content</p>'
       }
@@ -86,6 +90,7 @@ describe('middleware/validate', () => {
   describe('called with a mustache template with data', () => {
 
     const req = {
+      log: sinon.stub(),
       body: {
         template: '<p>{{content}}</p>',
         data: {

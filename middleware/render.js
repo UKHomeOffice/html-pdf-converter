@@ -4,6 +4,7 @@ const debug = require('debug')('middleware:render');
 const mustache = require('mustache');
 
 module.exports = (req, res, next) => {
+  req.log('debug', 'Rendering HTML');
   const template = req.body.template;
   const data = req.body.data;
   try {
