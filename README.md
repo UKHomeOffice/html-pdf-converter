@@ -15,6 +15,7 @@ This implementation uses Docker to run [Chrome Headless (tip-of-tree)](https://c
 ### Chrome Headless
 ```bash
 docker pull yukinying/chrome-headless/
+docker build -t yukinying/chrome-headless .
 docker run yukinying/chrome-headless
 ```
 
@@ -23,6 +24,7 @@ docker run yukinying/chrome-headless
 ### Node App
 ```bash
 docker pull quay.io/ukhomeofficedigital/html-pdf-converter
+docker build -t html-pdf-converter .
 docker run -p 8001:8001 html-pdf-converter
 ```
 
