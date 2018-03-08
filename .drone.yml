@@ -8,9 +8,11 @@ pipeline:
       event: [push, pull_request]
 
   build:
-    image: docker:1.11
+    image: docker:17.09.1
+    secrets:
+      - docker_password
     environment:
-      - DOCKER_HOST=tcp://127.0.0.1:2375
+      - DOCKER_HOST=tcp://172.17.0.1:2375
     commands:
       - docker build -t html-pdf-converter .
       - docker login -u="ukhomeofficedigital+html_pdf_converter" -p=${DOCKER_PASSWORD} quay.io
@@ -19,11 +21,3 @@ pipeline:
     when:
       branch: master
       event: push
-
-services:
-  dind:
-    image: docker:1.11-dind
-    privileged: true
-    command:
-      - "-s"
-      - "overlay"
