@@ -1,21 +1,13 @@
 pipeline:
-  build_6:
-    image: node:6
+  test:
+    image: node:8
     commands:
       - npm --loglevel warn install
       - npm test
     when:
       event: [push, pull_request]
 
-  build_7:
-    image: node:7
-    commands:
-      - npm --loglevel warn install
-      - npm test
-    when:
-      event: [push, pull_request]
-
-  image_to_quay:
+  build:
     image: docker:1.11
     environment:
       - DOCKER_HOST=tcp://127.0.0.1:2375
