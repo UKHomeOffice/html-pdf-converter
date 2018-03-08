@@ -8,17 +8,7 @@
 
 Send a HTML or Mustache template and recieve a PDF stream as the response.
 
-This implementation uses Docker to run [Chrome Headless (tip-of-tree)](https://chromedevtools.github.io/devtools-protocol/tot/). Using Docker is not a requirement but makes installation much easier.
-
 ## Install and start
-
-### Chrome Headless
-```bash
-docker pull yukinying/chrome-headless/
-docker run yukinying/chrome-headless
-```
-
-`chrome-headless` defaults to running at `localhost:9222`. You can override these settings with `CHROME_HOST` and `CHROME_PORT`.
 
 ### Node App
 ```bash
@@ -31,8 +21,8 @@ docker run -p 8001:8001 html-pdf-converter
 ```bash
 git clone git@github.com:UKHomeOffice/html-pdf-converter.git
 cd html-pdf-converter
-
-docker-compose build;docker-compose up
+npm install
+npm start
 ```
 
 ## Example usage
@@ -94,6 +84,4 @@ If your template includes links to any of these resources, we suggest you use [h
 ```bash
 APP_PORT:    Defaults to 8001
 APP_HOST:    Defaults to 'localhost'
-CHROME_HOST: Defaults to 'localhost'
-CHROME_PORT: Defaults to 9222
 ```

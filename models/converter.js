@@ -1,32 +1,31 @@
 'use strict';
 
-const chrome = require('chrome-remote-interface');
-const config = require('../config');
+const puppeteer = require('puppeteer');
 
 module.exports = class PDFConverterModel {
 
-  _connect() {
-    return chrome({
-      host: config.chrome.host,
-      port: config.chrome.port
-    });
-  }
-
   create(html) {
-    return this._connect()
-      .then(client => client.Page.navigate({url: 'about:blank'})
-        .then(frame => frame.frameId)
-        .then(frameId => client.Page.setDocumentContent({frameId, html}))
-        .then(() => client.Page.printToPDF())
-        .then(result => {
-          client.close();
-          return this._parse(result.data);
-        })
-      );
-  }
 
-  _parse(data) {
-    return Buffer.from(data, 'base64');
+    const opts = {
+      args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox'
+      ]
+    };
+    return puppeteer.launch(opts)
+      .then(browser => {
+        return browser.newPage()
+          .then(page => {
+            return page.goto(`data:text/html,${html}`, {waitUntil: 'networkidle2' })
+              .then(() => page.pdf({ format: 'A4' }))
+              .then(data => Buffer.from(data, 'base64'));
+          })
+          .then(data => {
+            return browser.close()
+              .then(() => data);
+          });
+      });
+
   }
 
 };

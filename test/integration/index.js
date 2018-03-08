@@ -8,20 +8,19 @@ const root = path.resolve(__dirname, '../fixtures');
 
 const renderStub = sinon.stub().yields();
 
-const result = {data: Buffer(1)};
+const result = Buffer(1);
 const clientStub = {
-  close: sinon.stub(),
-  Page: {
-    printToPDF: sinon.stub().resolves(result),
-    navigate: sinon.stub().resolves({frameId: '123'}),
-    setDocumentContent: sinon.stub().resolves()
-  }
+  close: sinon.stub().resolves(),
+  newPage: sinon.stub().resolves({
+    goto: sinon.stub().resolves(),
+    pdf: sinon.stub().resolves(result)
+  })
 };
 const chromeStub = sinon.stub().resolves(clientStub);
 chromeStub.onCall(0).rejects({code: 'ECONNREFUSED'});
 
 proxyquire('../../models/converter', {
-  'chrome-remote-interface': chromeStub
+  'puppeteer': { launch: chromeStub }
 });
 
 proxyquire('../../controllers/convert', {
@@ -105,18 +104,18 @@ describe('POSTing to /convert', () => {
       return supertest(require('../../'))
         .post('/convert')
         .send({template: template})
+        .expect(201)
         .expect('Content-type', /octet-stream/)
-        .expect(() => assert(renderStub.called))
-        .expect(201);
+        .expect(() => assert(renderStub.called));
     });
 
     it('returns a 201 and a PDF', () => {
       return supertest(require('../../'))
         .post('/convert')
         .send({template: template})
+        .expect(201)
         .expect('Content-type', /octet-stream/)
-        .expect(res => assert.equal(res.text, result.data))
-        .expect(201);
+        .expect(res => assert.equal(res.text, result));
     });
 
     it('can render a mustache template with a complete data set', () => {
@@ -131,9 +130,9 @@ describe('POSTing to /convert', () => {
             para: 'My para'
           }
         })
+        .expect(201)
         .expect('Content-type', /octet-stream/)
-        .expect(res => assert.equal(res.text, result.data))
-        .expect(201);
+        .expect(res => assert.equal(res.text, result));
     });
 
   });
