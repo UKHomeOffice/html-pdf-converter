@@ -12,7 +12,7 @@ const errorHandler = require('./middleware/error-handler');
 
 app.use(churchill(logger));
 
-app.use(bodyParser.json());
+app.use(bodyParser.json({ limit: config.limit }));
 
 app.use('/convert', controller);
 app.use(errorHandler);
