@@ -1,7 +1,7 @@
 'use strict';
 
 const missingData = require('../lib/missing-data');
-const debug = require('debug')('middleware:validate');
+const debug = require('debug')('pdf:middleware:validate');
 const ValidationError = require('../lib/validation-error');
 
 module.exports = (req, res, next) => {

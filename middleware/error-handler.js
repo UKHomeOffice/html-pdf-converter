@@ -1,6 +1,6 @@
 'use strict';
 
-const debug = require('debug')('middleware:errorhandler');
+const debug = require('debug')('pdf:middleware:errorhandler');
 
 // eslint-disable-next-line no-unused-vars
 module.exports = (error, req, res, next) => {
