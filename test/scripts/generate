@@ -1,0 +1,42 @@
+#! /usr/bin/env node
+
+
+const mkdir = require('mkdirp');
+const supertest = require('supertest');
+const path = require('path');
+const fs = require('fs');
+
+const files = fs.readdirSync(path.resolve(__dirname, '../regression/inputs'));
+
+const App = require('../../');
+
+function binaryParser(res, callback) {
+  res.setEncoding('binary');
+  res.data = '';
+  res.on('data', function (chunk) {
+    res.data += chunk;
+  });
+  res.on('end', function () {
+    callback(null, new Buffer(res.data, 'binary'));
+  });
+}
+
+mkdir.sync(path.resolve(__dirname, '../regression/outputs'));
+
+files.reduce((p, file) => {
+
+  return p.then(() => {
+    return supertest(App)
+      .post('/convert')
+      .send(require(path.resolve(__dirname, '../regression/inputs', file)))
+      .parse(binaryParser)
+      .buffer()
+      .then(res => {
+        const output = path.resolve(__dirname, '../regression/outputs', file.replace('.json', '.pdf'));
+        console.log(`Generating: ${output}`);
+        fs.writeFileSync(output, res.body);
+      });
+  });
+
+}, Promise.resolve())
+.catch(e => console.error(e));

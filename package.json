@@ -14,7 +14,8 @@
     "start": "node .",
     "unit": "LOG_LEVEL=silent mocha",
     "lint": "eslint .",
-    "test": "npm run unit && npm run lint"
+    "test": "npm run unit && npm run lint",
+    "build:test-fixtures": "LOG_LEVEL=silent ./test/scripts/generate"
   },
   "dependencies": {
     "body-parser": "^1.17.1",
@@ -30,6 +31,7 @@
     "choma": "^1.2.0",
     "eslint": "^3.14.0",
     "eslint-config-homeoffice": "^2.1.0",
+    "mkdirp": "^0.5.1",
     "mocha": "^3.2.0",
     "pre-commit": "^1.2.2",
     "sinon": "^2.1.0",
