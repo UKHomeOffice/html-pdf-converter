@@ -1,38 +1,41 @@
 'use strict';
 
-const proxyquire = require('proxyquire');
 const supertest = require('supertest');
+const puppeteer = require('puppeteer');
+const mustache = require('mustache');
 const path = require('path');
 const fs = require('fs');
-const root = path.resolve(__dirname, '../fixtures');
+const fixtures = path.resolve(__dirname, '../fixtures');
 
-const renderStub = sinon.stub().yields();
+const template = fs.readFileSync(`${fixtures}/template.html`, 'utf-8');
+const mustacheTemplate = fs.readFileSync(`${fixtures}/mustache.html`, 'utf-8');
 
+const App = require('../../');
 const result = Buffer(1);
-const clientStub = {
-  close: sinon.stub().resolves(),
-  newPage: sinon.stub().resolves({
-    goto: sinon.stub().resolves(),
-    pdf: sinon.stub().resolves(result)
-  })
-};
-const chromeStub = sinon.stub().resolves(clientStub);
-chromeStub.onCall(0).rejects({code: 'ECONNREFUSED'});
-
-proxyquire('../../models/converter', {
-  'puppeteer': { launch: chromeStub }
-});
-
-proxyquire('../../controllers/convert', {
-  '../middleware/render': renderStub
-});
 
 describe('POSTing to /convert', () => {
+
+  beforeEach(() => {
+    const clientStub = {
+      close: sinon.stub().resolves(),
+      newPage: sinon.stub().resolves({
+        goto: sinon.stub().resolves(),
+        pdf: sinon.stub().resolves(result)
+      })
+    };
+    sinon.stub(puppeteer, 'launch').resolves(clientStub);
+    sinon.spy(mustache, 'render');
+  });
+
+  afterEach(() => {
+    puppeteer.launch.restore();
+    mustache.render.restore();
+  });
 
   describe('without a template', () => {
 
     it('returns a NoTemplate, 400 JSON error', () =>
-      supertest(require('../../'))
+      supertest(App)
         .post('/convert')
         .expect('Content-type', /json/)
         .expect(400, {
@@ -46,7 +49,7 @@ describe('POSTing to /convert', () => {
   describe('with a non-string template', () => {
 
     it('returns a InvalidTemplate, 400 JSON error', () =>
-      supertest(require('../../'))
+      supertest(App)
         .post('/convert')
         .send({template: 1234})
         .expect('Content-type', /json/)
@@ -61,12 +64,10 @@ describe('POSTing to /convert', () => {
   describe('with a mustache template and incomplete data', () => {
 
     it('returns a MissingTemplateData, 400 JSON error', () => {
-      const template = fs.readFileSync(`${root}/mustache.html`, 'utf-8');
-
-      return supertest(require('../../'))
+      return supertest(App)
         .post('/convert')
         .send({
-          template: template,
+          template: mustacheTemplate,
           data: {title: 'My title'}
         })
         .expect('Content-type', /json/)
@@ -80,10 +81,12 @@ describe('POSTing to /convert', () => {
 
   describe('if the client can\'t connect to chrome', () => {
 
-    it('returns a 400 error', () => {
-      const template = fs.readFileSync(`${root}/template.html`, 'utf-8');
+    beforeEach(() => {
+      puppeteer.launch.rejects({ code: 'ECONNREFUSED' });
+    });
 
-      return supertest(require('../../'))
+    it('returns a 400 error', () => {
+      return supertest(App)
         .post('/convert')
         .send({template: template})
         .expect('Content-type', /json/)
@@ -98,19 +101,17 @@ describe('POSTing to /convert', () => {
 
   describe('with a valid html string', () => {
 
-    let template = fs.readFileSync(`${root}/template.html`, 'utf-8');
-
     it('renders the html', () => {
-      return supertest(require('../../'))
+      return supertest(App)
         .post('/convert')
         .send({template: template})
         .expect(201)
         .expect('Content-type', /octet-stream/)
-        .expect(() => assert(renderStub.called));
+        .expect(() => assert(mustache.render.calledOnce));
     });
 
     it('returns a 201 and a PDF', () => {
-      return supertest(require('../../'))
+      return supertest(App)
         .post('/convert')
         .send({template: template})
         .expect(201)
@@ -119,11 +120,10 @@ describe('POSTing to /convert', () => {
     });
 
     it('can render a mustache template with a complete data set', () => {
-      template = fs.readFileSync(`${root}/mustache.html`, 'utf-8');
-      return supertest(require('../../'))
+      return supertest(App)
         .post('/convert')
         .send({
-          template: template,
+          template: mustacheTemplate,
           data: {
             title: 'My title',
             header: 'My header',
