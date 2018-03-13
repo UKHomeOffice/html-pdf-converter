@@ -12,9 +12,10 @@
   "main": "index.js",
   "scripts": {
     "start": "node .",
-    "unit": "LOG_LEVEL=silent mocha",
+    "unit": "LOG_LEVEL=silent mocha ./test/integration ./test/unit",
     "lint": "eslint .",
     "test": "npm run unit && npm run lint",
+    "test:regression": "LOG_LEVEL=silent mocha ./test/regression",
     "build:test-fixtures": "LOG_LEVEL=silent ./test/scripts/generate"
   },
   "dependencies": {

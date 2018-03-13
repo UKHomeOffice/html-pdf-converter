@@ -1,14 +1,11 @@
 #! /usr/bin/env node
 
-
 const mkdir = require('mkdirp');
 const supertest = require('supertest');
 const path = require('path');
 const fs = require('fs');
 
 const files = fs.readdirSync(path.resolve(__dirname, '../regression/inputs'));
-
-const App = require('../../');
 
 function binaryParser(res, callback) {
   res.setEncoding('binary');
@@ -26,7 +23,7 @@ mkdir.sync(path.resolve(__dirname, '../regression/outputs'));
 files.reduce((p, file) => {
 
   return p.then(() => {
-    return supertest(App)
+    return supertest('http://localhost:8001')
       .post('/convert')
       .send(require(path.resolve(__dirname, '../regression/inputs', file)))
       .parse(binaryParser)

@@ -19,7 +19,7 @@ describe('regression tests', () => {
     it(file, () => {
       const target = path.resolve(__dirname, './outputs', file.replace('.json', '.pdf'));
       const expected = fs.readFileSync(target).toString('utf8');
-      return supertest(require('../../'))
+      return supertest('http://localhost:8001')
         .post('/convert')
         .send(require(path.resolve(__dirname, './inputs', file)))
         .expect(201)

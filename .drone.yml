@@ -9,12 +9,38 @@ pipeline:
 
   build:
     image: docker:17.09.1
+    environment:
+      - DOCKER_HOST=tcp://172.17.0.1:2375
+    commands:
+    when:
+      event: [push, pull_request]
+
+  regression:
+    image: docker:17.09.1
+    environment:
+      - DOCKER_HOST=tcp://172.17.0.1:2375
+    commands:
+      - docker build -f test/regression/Dockerfile -t regression-tests .
+    when:
+      event: [push, pull_request]
+
+  regression:
+    image: docker:17.09.1
+    environment:
+      - DOCKER_HOST=tcp://172.17.0.1:2375
+    commands:
+      - docker run html-pdf-converter -d --net host --name regression-runner
+      - docker exec regression-runner npm run test:regression
+    when:
+      event: [push, pull_request]
+
+  push:
+    image: docker:17.09.1
     secrets:
       - docker_password
     environment:
       - DOCKER_HOST=tcp://172.17.0.1:2375
     commands:
-      - docker build -t html-pdf-converter .
       - docker login -u="ukhomeofficedigital+html_pdf_converter" -p=$${DOCKER_PASSWORD} quay.io
       - docker tag html-pdf-converter quay.io/ukhomeofficedigital/html-pdf-converter:$${DRONE_COMMIT_SHA}
       - docker push quay.io/ukhomeofficedigital/html-pdf-converter:$${DRONE_COMMIT_SHA}
