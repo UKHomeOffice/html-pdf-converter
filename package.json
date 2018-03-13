@@ -12,9 +12,11 @@
   "main": "index.js",
   "scripts": {
     "start": "node .",
-    "unit": "LOG_LEVEL=silent mocha",
+    "unit": "LOG_LEVEL=silent mocha ./test/integration ./test/unit",
     "lint": "eslint .",
-    "test": "npm run unit && npm run lint"
+    "test": "npm run unit && npm run lint",
+    "test:regression": "LOG_LEVEL=silent mocha ./test/regression",
+    "build:test-fixtures": "LOG_LEVEL=silent ./test/scripts/generate"
   },
   "dependencies": {
     "body-parser": "^1.17.1",
@@ -27,11 +29,12 @@
     "puppeteer": "^1.1.1"
   },
   "devDependencies": {
+    "choma": "^1.2.0",
     "eslint": "^3.14.0",
     "eslint-config-homeoffice": "^2.1.0",
+    "mkdirp": "^0.5.1",
     "mocha": "^3.2.0",
     "pre-commit": "^1.2.2",
-    "proxyquire": "^1.7.11",
     "sinon": "^2.1.0",
     "supertest": "^3.0.0"
   },

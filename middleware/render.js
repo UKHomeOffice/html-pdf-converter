@@ -1,6 +1,6 @@
 'use strict';
 
-const debug = require('debug')('middleware:render');
+const debug = require('debug')('pdf:middleware:render');
 const mustache = require('mustache');
 
 module.exports = (req, res, next) => {

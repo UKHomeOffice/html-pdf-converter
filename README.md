@@ -85,3 +85,9 @@ If your template includes links to any of these resources, we suggest you use [h
 APP_PORT:    Defaults to 8001
 APP_HOST:    Defaults to 'localhost'
 ```
+
+## Tests
+
+The regression test suite runs against known json and checks the output against local pdf files.
+
+To regenerate the pdf outputs run `npm run build:test-fixtures`.

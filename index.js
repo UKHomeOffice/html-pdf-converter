@@ -16,9 +16,12 @@ app.use(bodyParser.json({ limit: config.limit }));
 
 app.use('/convert', controller);
 app.use(errorHandler);
-app.listen(config.port, () => {
-  // eslint-disable-next-line no-console
-  logger.info(`Listening on ${config.host}:${config.port}`);
-});
+
+if (require.main === module) {
+  app.listen(config.port, () => {
+    // eslint-disable-next-line no-console
+    logger.info(`Listening on ${config.host}:${config.port}`);
+  });
+}
 
 module.exports = app;
