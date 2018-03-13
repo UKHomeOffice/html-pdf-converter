@@ -29,8 +29,8 @@ pipeline:
     environment:
       - DOCKER_HOST=tcp://172.17.0.1:2375
     commands:
-      - docker run -d --net host html-pdf-converter
-      - docker run --net host regression-tests
+      - docker run -d -p 8001:8001 html-pdf-converter
+      - docker run regression-tests
     when:
       event: [push, pull_request]
 
