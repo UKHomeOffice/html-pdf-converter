@@ -12,6 +12,7 @@ pipeline:
     environment:
       - DOCKER_HOST=tcp://172.17.0.1:2375
     commands:
+      - docker build -t html-pdf-converter .
     when:
       event: [push, pull_request]
 
