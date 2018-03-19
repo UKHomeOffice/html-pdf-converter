@@ -74,6 +74,21 @@ Response (example)
 %PDF-1.4\n1 0 obj\n<<\n/Title ...
 ```
 
+## PDF Options
+
+Chrome can accept a number of options to its PDF render function. These are documented here: [https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagepdfoptions](https://github.com/GoogleChrome/puppeteer/blob/master/docs/api.md#pagepdfoptions)
+
+These can be set on a per-request basis by passing a `pdfOptions` object as part of your request body.
+
+```json
+{
+  "template":"<h1>Hello World!</h1>",
+  "pdfOptions": {
+    "printBackground": true
+  }
+}
+```
+
 ## External Resources
 
 This service cannot resolve external resources such as linked CSS, JavaScript or images.

@@ -4,7 +4,7 @@ const puppeteer = require('puppeteer');
 
 module.exports = class PDFConverterModel {
 
-  create(html) {
+  create(html, options) {
 
     const opts = {
       args: [
@@ -12,12 +12,17 @@ module.exports = class PDFConverterModel {
           '--disable-setuid-sandbox'
       ]
     };
+
+    options = Object.assign({
+      format: 'A4'
+    }, options);
+
     return puppeteer.launch(opts)
       .then(browser => {
         return browser.newPage()
           .then(page => {
             return page.goto(`data:text/html,${html}`, {waitUntil: 'networkidle2' })
-              .then(() => page.pdf({ format: 'A4' }))
+              .then(() => page.pdf(options))
               .then(data => Buffer.from(data, 'base64'));
           })
           .then(data => {
