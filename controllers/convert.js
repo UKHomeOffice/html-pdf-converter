@@ -17,7 +17,7 @@ module.exports = router.post('/',
 
     req.log('debug', 'Creating PDF');
 
-    model.create(res.locals.html).then(data => {
+    model.create(res.locals.html, req.body.pdfOptions).then(data => {
       req.log('debug', 'Created PDF');
       res.setHeader('Content-Type', 'octet-stream');
       res.status(201).send(data);

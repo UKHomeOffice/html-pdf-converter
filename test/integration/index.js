@@ -15,12 +15,15 @@ const result = Buffer(1);
 
 describe('POSTing to /convert', () => {
 
+  let pdfStub;
+
   beforeEach(() => {
+    pdfStub = sinon.stub().resolves(result);
     const clientStub = {
       close: sinon.stub().resolves(),
       newPage: sinon.stub().resolves({
         goto: sinon.stub().resolves(),
-        pdf: sinon.stub().resolves(result)
+        pdf: pdfStub
       })
     };
     sinon.stub(puppeteer, 'launch').resolves(clientStub);
@@ -133,6 +136,18 @@ describe('POSTing to /convert', () => {
         .expect(201)
         .expect('Content-type', /octet-stream/)
         .expect(res => assert.equal(res.text, result));
+    });
+
+    it('passes pdf render options to pdf method if defined', () => {
+      return supertest(require('../../'))
+        .post('/convert')
+        .send({ template: template, pdfOptions: { printBackgrounds: true } })
+        .expect(201)
+        .expect('Content-type', /octet-stream/)
+        .expect(() => {
+          assert(pdfStub.calledOnce);
+          assert(pdfStub.calledWithExactly({ format: 'A4', printBackgrounds: true }));
+        });
     });
 
   });
