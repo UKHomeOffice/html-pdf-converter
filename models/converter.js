@@ -14,14 +14,15 @@ module.exports = class PDFConverterModel {
     };
 
     options = Object.assign({
-      format: 'A4'
+      format: 'A4',
+      waitUntil: 'load'
     }, options);
 
     return puppeteer.launch(opts)
       .then(browser => {
         return browser.newPage()
           .then(page => {
-            return page.goto(`data:text/html,${html}`, {waitUntil: 'networkidle2' })
+            return page.goto(`data:text/html,${html}`, { waitUntil: options.waitUntil })
               .then(() => page.pdf(options))
               .then(data => Buffer.from(data, 'base64'));
           })

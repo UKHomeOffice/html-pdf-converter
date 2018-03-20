@@ -16,13 +16,15 @@ const result = Buffer(1);
 describe('POSTing to /convert', () => {
 
   let pdfStub;
+  let gotoStub;
 
   beforeEach(() => {
     pdfStub = sinon.stub().resolves(result);
+    gotoStub = sinon.stub().resolves();
     const clientStub = {
       close: sinon.stub().resolves(),
       newPage: sinon.stub().resolves({
-        goto: sinon.stub().resolves(),
+        goto: gotoStub,
         pdf: pdfStub
       })
     };
@@ -146,7 +148,31 @@ describe('POSTing to /convert', () => {
         .expect('Content-type', /octet-stream/)
         .expect(() => {
           assert(pdfStub.calledOnce);
-          assert(pdfStub.calledWithExactly({ format: 'A4', printBackgrounds: true }));
+          assert(pdfStub.calledWith(sinon.match({ format: 'A4', printBackgrounds: true })));
+        });
+    });
+
+    it('respects custom waitUntil option if defined', () => {
+      return supertest(require('../../'))
+        .post('/convert')
+        .send({ template: template, pdfOptions: { waitUntil: 'networkidle0' } })
+        .expect(201)
+        .expect('Content-type', /octet-stream/)
+        .expect(() => {
+          assert(gotoStub.calledOnce);
+          assert(gotoStub.calledWith(sinon.match.string, { waitUntil: 'networkidle0' }));
+        });
+    });
+
+    it('waits for load event by default', () => {
+      return supertest(require('../../'))
+        .post('/convert')
+        .send({ template: template })
+        .expect(201)
+        .expect('Content-type', /octet-stream/)
+        .expect(() => {
+          assert(gotoStub.calledOnce);
+          assert(gotoStub.calledWith(sinon.match.string, { waitUntil: 'load' }));
         });
     });
 
