@@ -15,7 +15,7 @@ module.exports = class PDFConverterModel {
 
     options = Object.assign({
       format: 'A4',
-      waitUntil: 'networkidle2'
+      waitUntil: 'load'
     }, options);
 
     return puppeteer.launch(opts)

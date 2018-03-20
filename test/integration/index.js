@@ -155,16 +155,16 @@ describe('POSTing to /convert', () => {
     it('respects custom waitUntil option if defined', () => {
       return supertest(require('../../'))
         .post('/convert')
-        .send({ template: template, pdfOptions: { waitUntil: 'load' } })
+        .send({ template: template, pdfOptions: { waitUntil: 'networkidle0' } })
         .expect(201)
         .expect('Content-type', /octet-stream/)
         .expect(() => {
           assert(gotoStub.calledOnce);
-          assert(gotoStub.calledWith(sinon.match.string, { waitUntil: 'load' }));
+          assert(gotoStub.calledWith(sinon.match.string, { waitUntil: 'networkidle0' }));
         });
     });
 
-    it('waits for networkidle2 event by default', () => {
+    it('waits for load event by default', () => {
       return supertest(require('../../'))
         .post('/convert')
         .send({ template: template })
@@ -172,7 +172,7 @@ describe('POSTing to /convert', () => {
         .expect('Content-type', /octet-stream/)
         .expect(() => {
           assert(gotoStub.calledOnce);
-          assert(gotoStub.calledWith(sinon.match.string, { waitUntil: 'networkidle2' }));
+          assert(gotoStub.calledWith(sinon.match.string, { waitUntil: 'load' }));
         });
     });
 
