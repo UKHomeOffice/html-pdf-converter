@@ -17,6 +17,6 @@ RUN chown -R nodejs:nodejs /app/node_modules/puppeteer
 
 COPY . /app
 
-USER nodejs
+USER 999
 
 CMD ["npm", "start"]
