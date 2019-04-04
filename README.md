@@ -13,7 +13,7 @@ Send a HTML or Mustache template and recieve a PDF stream as the response.
 ### Node App
 ```bash
 docker pull quay.io/ukhomeofficedigital/html-pdf-converter
-docker run -p 8001:8001 html-pdf-converter
+docker run -p 8080:8080 html-pdf-converter
 ```
 
 ## Development
@@ -48,7 +48,7 @@ curl -H "Content-Type:application/json" \
               "para": "My content"
             }
          }' \
-     -i localhost:8001/convert
+     -i localhost:8080/convert
 ```
 
 HTML
@@ -66,7 +66,7 @@ curl -H "Content-Type:application/json" \
               </html>\
             "'"
          }' \
-     -i localhost:8001/convert
+     -i localhost:8080/convert
 ```
 
 Response (example)
@@ -97,6 +97,6 @@ If your template includes links to any of these resources, we suggest you use [h
 ## Environment Variables
 
 ```bash
-APP_PORT:    Defaults to 8001
+APP_PORT:    Defaults to 8080
 APP_HOST:    Defaults to 'localhost'
 ```
