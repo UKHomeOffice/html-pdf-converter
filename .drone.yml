@@ -5,19 +5,27 @@ pipeline:
       - npm --loglevel warn install
       - npm test
     when:
-      event: [push, pull_request]
+      event: [push, pull_request, tag]
 
   build:
+    image: docker:17.09.1
+    environment:
+      - DOCKER_HOST=tcp://172.17.0.1:2375
+    commands:
+      - docker build -t html-pdf-converter .
+    when:
+      branch: master
+      event: [push, pull_request, tag]
+
+  deploy:
     image: docker:17.09.1
     secrets:
       - docker_password
     environment:
       - DOCKER_HOST=tcp://172.17.0.1:2375
     commands:
-      - docker build -t html-pdf-converter .
       - docker login -u="ukhomeofficedigital+html_pdf_converter" -p=$${DOCKER_PASSWORD} quay.io
-      - docker tag html-pdf-converter quay.io/ukhomeofficedigital/html-pdf-converter:$${DRONE_COMMIT_SHA}
-      - docker push quay.io/ukhomeofficedigital/html-pdf-converter:$${DRONE_COMMIT_SHA}
+      - docker tag html-pdf-converter quay.io/ukhomeofficedigital/html-pdf-converter:$${DRONE_TAG}
+      - docker push quay.io/ukhomeofficedigital/html-pdf-converter:$${DRONE_TAG}
     when:
-      branch: master
-      event: push
+      event: tag
