@@ -14,7 +14,6 @@ pipeline:
     commands:
       - docker build -t html-pdf-converter .
     when:
-      branch: master
       event: [push, pull_request, tag]
 
   deploy:
