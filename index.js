@@ -15,6 +15,7 @@ app.use(churchill(logger));
 app.use(bodyParser.json({ limit: config.limit }));
 
 app.use('/convert', controller);
+app.use('/', controller);
 app.use(errorHandler);
 app.listen(config.port, () => {
   // eslint-disable-next-line no-console
