@@ -22,7 +22,7 @@ module.exports = class PDFConverterModel {
       .then(browser => {
         return browser.newPage()
           .then(page => {
-            return page.goto(`data:text/html,${html}`, { waitUntil: options.waitUntil })
+            return page.setContent(html, { waitUntil: options.waitUntil })
               .then(() => page.pdf(options))
               .then(data => Buffer.from(data, 'base64'));
           })

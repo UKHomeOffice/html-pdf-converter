@@ -16,15 +16,15 @@ const result = Buffer(1);
 describe('POSTing to /convert', () => {
 
   let pdfStub;
-  let gotoStub;
+  let setContentStub;
 
   beforeEach(() => {
     pdfStub = sinon.stub().resolves(result);
-    gotoStub = sinon.stub().resolves();
+    setContentStub = sinon.stub().resolves();
     const clientStub = {
       close: sinon.stub().resolves(),
       newPage: sinon.stub().resolves({
-        goto: gotoStub,
+        setContent: setContentStub,
         pdf: pdfStub
       })
     };
@@ -159,8 +159,8 @@ describe('POSTing to /convert', () => {
         .expect(201)
         .expect('Content-type', /octet-stream/)
         .expect(() => {
-          assert(gotoStub.calledOnce);
-          assert(gotoStub.calledWith(sinon.match.string, { waitUntil: 'networkidle0' }));
+          assert(setContentStub.calledOnce);
+          assert(setContentStub.calledWith(sinon.match.string, { waitUntil: 'networkidle0' }));
         });
     });
 
@@ -171,8 +171,8 @@ describe('POSTing to /convert', () => {
         .expect(201)
         .expect('Content-type', /octet-stream/)
         .expect(() => {
-          assert(gotoStub.calledOnce);
-          assert(gotoStub.calledWith(sinon.match.string, { waitUntil: 'load' }));
+          assert(setContentStub.calledOnce);
+          assert(setContentStub.calledWith(sinon.match.string, { waitUntil: 'load' }));
         });
     });
 
