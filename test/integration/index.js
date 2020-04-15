@@ -106,13 +106,13 @@ describe('POSTing to /convert', () => {
 
   describe('with a valid html string', () => {
 
-    it('renders the html', () => {
+    it('renders the html without calling a mustache render', () => {
       return supertest(App)
         .post('/convert')
         .send({template: template})
         .expect(201)
         .expect('Content-type', /octet-stream/)
-        .expect(() => assert(mustache.render.calledOnce));
+        .expect(() => assert(!mustache.render.called));
     });
 
     it('returns a 201 and a PDF', () => {
