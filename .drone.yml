@@ -1,8 +1,8 @@
 pipeline:
   test:
-    image: node:8
+    image: node:10
     commands:
-      - npm --loglevel warn install
+      - npm ci
       - npm test
     when:
       event: [push, pull_request, tag]
