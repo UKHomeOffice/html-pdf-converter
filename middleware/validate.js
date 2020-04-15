@@ -5,6 +5,9 @@ const debug = require('debug')('pdf:middleware:validate');
 const ValidationError = require('../lib/validation-error');
 
 module.exports = (req, res, next) => {
+  if (req.body.noRender) {
+    return next();
+  }
   req.log('debug', 'Validating request');
   const template = req.body.template;
   let missing;
