@@ -1,9 +1,10 @@
-FROM node:10-slim
+FROM node:12-slim
 
 RUN  apt-get update
 # See https://crbug.com/795759
 RUN apt-get install -yq libgconf-2-4
 RUN apt-get install -yq gnupg
+RUN apt-get install -yq libxss1
 # Install latest chrome dev package, which installs the necessary libs to
 # make the bundled version of Chromium that Puppeteer installs work.
 RUN apt-get install -y curl --no-install-recommends
