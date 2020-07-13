@@ -9,7 +9,8 @@ module.exports = class PDFConverterModel {
     const opts = {
       args: [
           '--no-sandbox',
-          '--disable-setuid-sandbox'
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage'
       ]
     };
 
