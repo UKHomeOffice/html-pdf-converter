@@ -12,6 +12,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node .",
+    "dev": "nodemon -r dotenv/config index.js",
     "unit": "LOG_LEVEL=silent mocha",
     "lint": "eslint .",
     "test": "npm run unit && npm run lint"
@@ -28,9 +29,11 @@
   },
   "devDependencies": {
     "choma": "^1.2.0",
+    "dotenv": "^8.2.0",
     "eslint": "^3.14.0",
     "eslint-config-homeoffice": "^2.1.0",
     "mocha": "^6.2.0",
+    "nodemon": "^2.0.4",
     "pre-commit": "^1.2.2",
     "sinon": "^2.1.0",
     "supertest": "^3.0.0"

@@ -1,5 +1,5 @@
 'use strict';
-
+const express = require('express');
 const puppeteer = require('puppeteer');
 
 module.exports = class PDFConverterModel {
@@ -19,17 +19,30 @@ module.exports = class PDFConverterModel {
       waitUntil: 'load'
     }, options);
 
-    return puppeteer.launch(opts)
-      .then(browser => {
-        return browser.newPage()
-          .then(page => {
-            return page.setContent(html, { waitUntil: options.waitUntil })
-              .then(() => page.pdf(options))
-              .then(data => Buffer.from(data, 'base64'));
-          })
-          .then(data => {
-            return browser.close()
-              .then(() => data);
+    const listen = () => {
+      return new Promise((resolve, reject) => {
+        const app = express();
+        app.get('/', (req, res) => res.type('html').send(html));
+        const server = app.listen(0, err => {
+          return err ? reject(err) : resolve(server);
+        });
+      });
+    };
+
+    return listen()
+      .then(server => {
+        return puppeteer.launch(opts)
+          .then(browser => {
+            return browser.newPage()
+              .then(page => {
+                return page.goto(`http://localhost:${server.address().port}`, { waitUntil: options.waitUntil })
+                  .then(() => page.pdf(options))
+                  .then(data => Buffer.from(data, 'base64'));
+              })
+              .finally(() => {
+                browser.close();
+                server.close();
+              });
           });
       });
 
