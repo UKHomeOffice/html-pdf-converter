@@ -1,30 +1,39 @@
-pipeline:
-  test:
-    image: node:10
+kind: pipeline
+name: default
+type: kubernetes
+steps:
+  - name: install
+    image: node:12
     commands:
       - npm ci
-      - npm test
-    when:
-      event: [push, pull_request, tag]
 
-  build:
-    image: docker:17.09.1
+  - name: test
+    image: node:12
+    commands:
+      - npm test
+
+  - name: docker build
+    image: docker:dind
     environment:
-      - DOCKER_HOST=tcp://172.17.0.1:2375
+      DOCKER_HOST: tcp://docker:2375
     commands:
       - docker build -t html-pdf-converter .
-    when:
-      event: [push, pull_request, tag]
 
-  deploy:
-    image: docker:17.09.1
-    secrets:
-      - docker_password
+  - name: docker push
+    image: docker:dind
     environment:
-      - DOCKER_HOST=tcp://172.17.0.1:2375
+      DOCKER_HOST: tcp://docker:2375
+      DOCKER_PASSWORD:
+        from_secret: docker_password
     commands:
       - docker login -u="ukhomeofficedigital+html_pdf_converter" -p=$${DOCKER_PASSWORD} quay.io
       - docker tag html-pdf-converter quay.io/ukhomeofficedigital/html-pdf-converter:$${DRONE_TAG}
       - docker push quay.io/ukhomeofficedigital/html-pdf-converter:$${DRONE_TAG}
     when:
       event: tag
+
+services:
+- name: docker
+  image: docker:dind
+  environment:
+    DOCKER_TLS_CERTDIR: ""
