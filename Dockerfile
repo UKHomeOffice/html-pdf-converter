@@ -5,6 +5,7 @@ RUN  apt-get update
 RUN apt-get install -yq libgconf-2-4
 RUN apt-get install -yq gnupg
 RUN apt-get install -yq libxss1
+RUN apt-get install -yq libxtst6
 # Install latest chrome dev package, which installs the necessary libs to
 # make the bundled version of Chromium that Puppeteer installs work.
 RUN apt-get install -y curl --no-install-recommends
