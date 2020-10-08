@@ -11,7 +11,7 @@ const template = fs.readFileSync(`${fixtures}/template.html`, 'utf-8');
 const mustacheTemplate = fs.readFileSync(`${fixtures}/mustache.html`, 'utf-8');
 
 const App = require('../../');
-const result = Buffer(1);
+const result = Buffer.from('');
 
 describe('POSTing to /convert', () => {
 
