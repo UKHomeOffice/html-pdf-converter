@@ -31,4 +31,4 @@ RUN chown -R app:app /app/node_modules/puppeteer
 
 COPY . /app
 
-CMD node index.js --unhandled-rejections=strict
+CMD node --unhandled-rejections=strict index.js
