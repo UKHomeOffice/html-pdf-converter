@@ -3,14 +3,19 @@ name: default
 type: kubernetes
 steps:
   - name: install
-    image: node:12
+    image: node:14
     commands:
       - npm ci
 
   - name: test
-    image: node:12
+    image: node:14
     commands:
       - npm test
+
+  - name: audit
+    image: node:14
+    commands:
+      - npm audit --audit-level=high --production
 
   - name: docker build
     image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
