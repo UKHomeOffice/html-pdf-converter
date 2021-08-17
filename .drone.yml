@@ -13,18 +13,15 @@ steps:
       - npm test
 
   - name: docker build
-    image: docker:dind
-    environment:
-      DOCKER_HOST: tcp://docker:2375
+    image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
     commands:
       # wait for docker service to be up before running docker build
       - n=0; while [ "$n" -lt 60 ] && [ ! docker stats --no-stream ]; do n=$(( n + 1 )); sleep 1; done
       - docker build -t html-pdf-converter .
 
   - name: docker push
-    image: docker:dind
+    image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
     environment:
-      DOCKER_HOST: tcp://docker:2375
       DOCKER_PASSWORD:
         from_secret: docker_password
     commands:
@@ -36,6 +33,4 @@ steps:
 
 services:
 - name: docker
-  image: docker:dind
-  environment:
-    DOCKER_TLS_CERTDIR: ""
+  image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
