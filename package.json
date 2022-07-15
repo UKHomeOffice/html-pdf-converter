@@ -1,7 +1,7 @@
 {
   "name": "html-pdf-converter",
   "description": "An HTML to PDF conversion service wrapper",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "license": "MIT",
   "author": "Joe Chapman joseph@creatify.io",
   "repository": "git+https://github.com/UKHomeOffice/html-pdf-converter.git",
