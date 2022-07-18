@@ -10,7 +10,8 @@ module.exports = class PDFConverterModel {
       args: [
           '--no-sandbox',
           '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage'
+          '--disable-dev-shm-usage',
+          '--ignore-certificate-errors'
       ]
     };
 
@@ -36,5 +37,3 @@ module.exports = class PDFConverterModel {
   }
 
 };
-
-
