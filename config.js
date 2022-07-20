@@ -1,4 +1,10 @@
 'use strict';
+try {
+  // eslint-disable-next-line implicit-dependencies/no-implicit
+  require('dotenv').config();
+} catch (e) {
+  // noop
+}
 
 /* eslint-disable no-process-env */
 const config = {
