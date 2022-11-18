@@ -1,5 +1,7 @@
 'use strict';
 
+const sinon = require('sinon');
+const assert = require('assert');
 const supertest = require('supertest');
 const puppeteer = require('puppeteer');
 const mustache = require('mustache');

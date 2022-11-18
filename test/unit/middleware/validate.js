@@ -1,5 +1,7 @@
 'use strict';
 
+const sinon = require('sinon');
+const assert = require('assert');
 const validate = require('../../../middleware/validate');
 const ValidationError = require('../../../lib/validation-error');
 
