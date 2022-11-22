@@ -26,4 +26,3 @@ module.exports = router.post('/',
       next(err);
     });
   });
-

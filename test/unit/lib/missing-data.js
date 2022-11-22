@@ -1,5 +1,6 @@
 'use strict';
 
+const assert = require('assert');
 const path = require('path');
 const fs = require('fs');
 const missingData = require('../../../lib/missing-data');

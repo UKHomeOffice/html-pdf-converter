@@ -1,9 +1,12 @@
 extends:
-  - '../.eslintrc'
-  - 'homeoffice/config/testing'
+  - ../.eslintrc
 
 env:
   es6: true
+  mocha: true
 
 globals:
   assert: true
+
+rules:
+  implicit-dependencies/no-implicit: [2, { dev: true }]
