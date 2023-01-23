@@ -29,6 +29,7 @@ steps:
     pull: always
     environment:
       IMAGE_NAME: html-pdf-converter
+      WHITELIST_FILE: cve-exceptions.txt
 
   - name: docker push
     image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
