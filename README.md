@@ -100,3 +100,9 @@ If your template includes links to any of these resources, we suggest you use [h
 APP_PORT:    Defaults to 8080
 APP_HOST:    Defaults to 'localhost'
 ```
+
+## Troubleshooting
+
+If you get the following error locally, `html-pdf-converter: Handling error message=Could not find browser revision 756035. Run "npm install" or "yarn install" to download a browser binary.`
+
+Then you may need to manually install puppeteer `npm i puppeteer`
