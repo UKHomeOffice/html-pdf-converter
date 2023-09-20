@@ -10,11 +10,50 @@ Send a HTML or Mustache template and recieve a PDF stream as the response.
 
 ## Install and start
 
-### Node App
+### Node App - Running a local html-pdf-instance in a docker container
+
+Navigate to quay.io/ukhomeofficedigital/html-pdf-converter to find latest the tagged version. Docker will pull whichever version you specify.
+
+For example, if the latest tagged version v2.4.3 then this command will need to be run:
+
 ```bash
-docker pull quay.io/ukhomeofficedigital/html-pdf-converter
-docker run -p 8080:8080 html-pdf-converter
+docker pull quay.io/ukhomeofficedigital/html-pdf-converter:v2.4.3 
 ```
+Once completed you can check the image is available locally by running: 
+```bash 
+docker image list
+``` 
+All HOF forms run locally on port 8080 and in some cases port 8081 may also be in use; so the html-pdf-converter should be run on another port. Currently port 8082 is recommended.
+
+```bash
+docker run -t -i -p 8082:8080 quay.io/ukhomeofficedigital/html-pdf-converter:**<tag>**
+```
+
+Observe following in terminal: 
+
+```bash
+2023-09-13T11:18:07.061Z - info: Listening on localhost:8080
+```
+
+Note: The terminal will say that the application is listening on port 8080, however you can verify which port the html-pdf-converter container is using by running:
+
+```bash
+docker ps -a
+```
+
+The Node app that is using the html to pdf converter will need to be run locally too. The service will need the following env variable:
+
+- `PDF_CONVERTER_URL`: If you are running a local PDF converter this is the url and port it is running on. This URL should be in the format `PDF_CONVERTER_URL=http://localhost:<PORT>/convert`. 
+
+- In this example the PDF_CONVERTER_URL would be `PDF_CONVERTER_URL=http://localhost:8082/convert`
+
+
+Upon a successful html to pdf conversion the response should look something like this:
+
+```bash
+2023-09-12T15:31:30.249Z - info:  status=201, method=POST, url=/convert, response_time=392, content_length=39644
+```
+
 
 ## Development
 
