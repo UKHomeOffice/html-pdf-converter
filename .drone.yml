@@ -25,11 +25,10 @@ steps:
       - docker build -t html-pdf-converter .
 
   - name: scan-image
-    image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/anchore-submission:latest
+    image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/trivy/client:latest
     pull: always
     environment:
       IMAGE_NAME: html-pdf-converter
-      WHITELIST_FILE: cve-exceptions.txt
 
   - name: docker push
     image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
@@ -46,9 +45,3 @@ steps:
 services:
 - name: docker
   image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
-- name: anchore-submission-server
-  image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/anchore-submission:latest
-  pull: always
-  commands:
-    - /run.sh server
-
