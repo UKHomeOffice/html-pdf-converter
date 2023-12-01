@@ -29,12 +29,12 @@
   },
   "devDependencies": {
     "choma": "^1.2.1",
-    "dotenv": "^16.0.3",
-    "eslint": "^8.28.0",
+    "dotenv": "^16.3.1",
+    "eslint": "^8.54.0",
     "eslint-config-lennym": "^2.3.2",
-    "mocha": "^10.1.0",
-    "nodemon": "^2.0.20",
-    "sinon": "^2.4.1",
-    "supertest": "^3.4.2"
+    "mocha": "^10.2.0",
+    "nodemon": "^3.0.1",
+    "sinon": "^17.0.1",
+    "supertest": "^6.3.3"
   }
 }
