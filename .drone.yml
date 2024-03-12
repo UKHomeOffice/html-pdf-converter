@@ -3,17 +3,17 @@ name: default
 type: kubernetes
 steps:
   - name: install
-    image: node:14
+    image: node:18
     commands:
       - npm ci
 
   - name: test
-    image: node:14
+    image: node:18
     commands:
       - npm test
 
   - name: audit
-    image: node:14
+    image: node:18
     commands:
       - npm audit --audit-level=high --production
 
@@ -24,14 +24,30 @@ steps:
       - n=0; while [ "$n" -lt 60 ] && [ ! docker stats --no-stream ]; do n=$(( n + 1 )); sleep 1; done
       - docker build -t html-pdf-converter .
 
-  - name: scan-image
-    image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/anchore-submission:latest
-    pull: always
-    environment:
-      IMAGE_NAME: html-pdf-converter
-      WHITELIST_FILE: cve-exceptions.txt
+  # - name: scan-image
+  #   image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/anchore-submission:latest
+  #   pull: always
+  #   environment:
+  #     IMAGE_NAME: html-pdf-converter
+  #     WHITELIST_FILE: cve-exceptions.txt
 
-  - name: docker push
+steps:
+- name: scan-image
+  pull: Always
+  image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/trivy/client:latest
+  resources:
+    limits:
+      cpu: 1000
+      memory: 1024Mi
+  environment:
+    IMAGE_NAME: html-pdf-converter
+  when:
+    event:
+    - pull_request
+    - push
+    - tag
+
+- name: docker push
     image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
     environment:
       DOCKER_PASSWORD:
@@ -43,12 +59,20 @@ steps:
     when:
       event: tag
 
+# services:
+# - name: docker
+#   image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
+# - name: anchore-submission-server
+#   image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/anchore-submission:latest
+#   pull: always
+#   commands:
+#     - /run.sh server
+    
 services:
 - name: docker
   image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
-- name: anchore-submission-server
-  image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/anchore-submission:latest
-  pull: always
-  commands:
-    - /run.sh server
+  resources:
+    limits:
+      cpu: 1000
+      memory: 1024Mi
 
