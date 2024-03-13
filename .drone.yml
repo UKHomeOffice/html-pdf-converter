@@ -31,9 +31,9 @@ steps:
       DOCKER_PASSWORD:
         from_secret: DOCKER_PASSWORD
     commands:
-    - docker login -u="ukhomeofficedigital+hof_lookup_replacer" -p=$${DOCKER_PASSWORD} quay.io
-    - docker tag $${IMAGE_REPO}:$${DRONE_COMMIT_SHA} $${IMAGE_URL}/$${IMAGE_REPO}:$${DRONE_COMMIT_SHA}
-    - docker push $${IMAGE_URL}/$${IMAGE_REPO}:$${DRONE_COMMIT_SHA}
+      - docker login -u="ukhomeofficedigital+html_pdf_converter" -p=$${DOCKER_PASSWORD} quay.io
+      - docker tag html-pdf-converter quay.io/ukhomeofficedigital/html-pdf-converter:$${DRONE_TAG}
+      - docker push quay.io/ukhomeofficedigital/html-pdf-converter:$${DRONE_TAG}
     when:
       branch: master
       event: [push, pull_request]
@@ -73,18 +73,6 @@ steps:
  #      - push
  #      - tag
 
-- name: docker push
-    image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
-    environment:
-      DOCKER_PASSWORD:
-        from_secret: docker_password
-    commands:
-      - docker login -u="ukhomeofficedigital+html_pdf_converter" -p=$${DOCKER_PASSWORD} quay.io
-      - docker tag html-pdf-converter quay.io/ukhomeofficedigital/html-pdf-converter:$${DRONE_TAG}
-      - docker push quay.io/ukhomeofficedigital/html-pdf-converter:$${DRONE_TAG}
-    when:
-      event: tag
-
 # services:
 # - name: docker
 #   image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
@@ -101,4 +89,5 @@ services:
     limits:
       cpu: 1000
       memory: 1024Mi
+      
 
