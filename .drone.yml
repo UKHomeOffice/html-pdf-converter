@@ -24,6 +24,20 @@ steps:
       - n=0; while [ "$n" -lt 60 ] && [ ! docker stats --no-stream ]; do n=$(( n + 1 )); sleep 1; done
       - docker build -t html-pdf-converter .
 
+  - name: image_to_quay
+    pull: if-not-exists
+    image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
+    environment:
+      DOCKER_PASSWORD:
+        from_secret: DOCKER_PASSWORD
+    commands:
+    - docker login -u="ukhomeofficedigital+hof_lookup_replacer" -p=$${DOCKER_PASSWORD} quay.io
+    - docker tag $${IMAGE_REPO}:$${DRONE_COMMIT_SHA} $${IMAGE_URL}/$${IMAGE_REPO}:$${DRONE_COMMIT_SHA}
+    - docker push $${IMAGE_URL}/$${IMAGE_REPO}:$${DRONE_COMMIT_SHA}
+    when:
+      branch: master
+      event: [push, pull_request]
+
   # - name: scan-image
   #   image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/anchore-submission:latest
   #   pull: always
@@ -41,11 +55,23 @@ steps:
       memory: 1024Mi
   environment:
     IMAGE_NAME: html-pdf-converter
-  when:
-    event:
-    - pull_request
-    - push
-    - tag
+       environment:
+      # IMAGE_NAME: eta:${DRONE_COMMIT_SHA}
+      IMAGE_NAME: quay.io/ukhomeofficedigital/html-pdf-converter:$${DRONE_TAG}
+      TOLERATE: MEDIUM,HIGH,CRITICAL
+      FAIL_ON_DETECTION: false
+      IGNORE_UNFIXED: true
+      ALLOW_CVE_LIST_FILE: trivy-cve-exceptions.txt
+    when:
+      event:
+      - pull_request
+      - push
+      - tag
+ # when:
+ #      event:
+ #      - pull_request
+ #      - push
+ #      - tag
 
 - name: docker push
     image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
