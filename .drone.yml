@@ -38,13 +38,6 @@ steps:
       branch: master
       event: [push, pull_request]
 
-  # - name: scan-image
-  #   image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/anchore-submission:latest
-  #   pull: always
-  #   environment:
-  #     IMAGE_NAME: html-pdf-converter
-  #     WHITELIST_FILE: cve-exceptions.txt
-
   - name: scan-image
     pull: Always
     image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/trivy/client:latest
@@ -60,17 +53,17 @@ steps:
       ALLOW_CVE_LIST_FILE: trivy-cve-exceptions.txt
     when:
       event:
-      - pull_request
-      - push
-      - tag
+        - pull_request
+        - push
+        - tag
 
-    
 services:
-- name: docker
-  image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
-  resources:
-    limits:
-      cpu: 1000
-      memory: 1024Mi
+  - name: docker
+    image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
+    resources:
+      limits:
+        cpu: 1000
+        memory: 1024Mi
+
       
 
