@@ -53,19 +53,16 @@ steps:
         cpu: 1000
         memory: 1024Mi
     environment:
-      IMAGE_NAME: html-pdf-converter
-         environment:
-        # IMAGE_NAME: eta:${DRONE_COMMIT_SHA}
-        IMAGE_NAME: quay.io/ukhomeofficedigital/html-pdf-converter:$${DRONE_TAG}
-        TOLERATE: MEDIUM,HIGH,CRITICAL
-        FAIL_ON_DETECTION: false
-        IGNORE_UNFIXED: true
-        ALLOW_CVE_LIST_FILE: trivy-cve-exceptions.txt
-      when:
-        event:
-        - pull_request
-        - push
-        - tag
+      IMAGE_NAME: quay.io/ukhomeofficedigital/html-pdf-converter:$${DRONE_TAG}
+      TOLERATE: MEDIUM,HIGH,CRITICAL
+      FAIL_ON_DETECTION: false
+      IGNORE_UNFIXED: true
+      ALLOW_CVE_LIST_FILE: trivy-cve-exceptions.txt
+    when:
+      event:
+      - pull_request
+      - push
+      - tag
 
     
 services:
