@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "body-parser": "^1.17.1",
-    "churchill": "1.1.1",
+    "churchill": "1.2.0",
     "debug": "^2.6.3",
     "express": "^4.18.2",
     "hof-logger": "2.0.0",
