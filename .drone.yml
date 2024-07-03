@@ -42,7 +42,7 @@ steps:
       - docker push quay.io/ukhomeofficedigital/html-pdf-converter:$${DRONE_TAG}
     when:
       event: tag
-     # Trivy Security Scannner
+  # Trivy Security Scannner
   - name: scan-packages
     pull: always
     image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/trivy/client:latest
@@ -60,7 +60,7 @@ steps:
       branch: master
       event: [ pull request, push, tag ]
      
-       # Trivy Security Scannner
+  ## Trivy Security Scannner
   - name: scan-base-image
     pull: always
     image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/trivy/client:latest
