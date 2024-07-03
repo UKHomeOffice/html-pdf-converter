@@ -13,7 +13,7 @@ steps:
       - npm test
 
   - name: audit
-    image: node:22
+    image: node:14
     commands:
       - npm audit --audit-level=high --production
 
