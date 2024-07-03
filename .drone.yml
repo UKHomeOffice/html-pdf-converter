@@ -59,7 +59,7 @@ steps:
       ALLOW_CVE_LIST_FILE: hof-services-config/html-pdf-converter/trivy-cve-exceptions.txt
     when:
       branch: master
-      event: [ pull request, push, tag ]
+      event: [ push, pull_request, tag ]
      
   ## Trivy Security Scannner
   - name: scan-base-image
@@ -77,7 +77,7 @@ steps:
       ALLOW_CVE_LIST_FILE: hof-services-config/html-pdf-converter/trivy-cve-exceptions.txt
     when:
       branch: master
-      event: [ pull request, push, tag ]
+      event: [ push, pull_request, tag ]
       
 services:
   - name: docker
