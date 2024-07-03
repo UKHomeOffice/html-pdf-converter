@@ -40,8 +40,9 @@ steps:
       - docker login -u="ukhomeofficedigital+html_pdf_converter" -p=$${DOCKER_PASSWORD} quay.io
       - docker tag html-pdf-converter quay.io/ukhomeofficedigital/html-pdf-converter:$${DRONE_TAG}
       - docker push quay.io/ukhomeofficedigital/html-pdf-converter:$${DRONE_TAG}
-    when:
-      event: tag
+    when: 
+      branch: master
+      event: [ push, pull_request ]
   # Trivy Security Scannner
   - name: scan-packages
     pull: always
