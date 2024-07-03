@@ -3,17 +3,17 @@ name: default
 type: kubernetes
 steps:
   - name: install
-    image: node:14
+    image: node:22
     commands:
       - npm ci
 
   - name: test
-    image: node:14
+    image: node:22
     commands:
       - npm test
 
   - name: audit
-    image: node:14
+    image: node:22
     commands:
       - npm audit --audit-level=high --production
 
@@ -24,12 +24,12 @@ steps:
       - n=0; while [ "$n" -lt 60 ] && [ ! docker stats --no-stream ]; do n=$(( n + 1 )); sleep 1; done
       - docker build -t html-pdf-converter .
 
-  - name: scan-image
-    image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/anchore-submission:latest
-    pull: always
-    environment:
-      IMAGE_NAME: html-pdf-converter
-      WHITELIST_FILE: cve-exceptions.txt
+  # - name: scan-image
+  #   image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/anchore-submission:latest
+  #   pull: always
+  #   environment:
+  #     IMAGE_NAME: html-pdf-converter
+  #     WHITELIST_FILE: cve-exceptions.txt
 
   - name: docker push
     image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
@@ -43,7 +43,7 @@ steps:
     when:
       event: tag
      # Trivy Security Scannner
-  - name: scan-image
+  - name: scan-packages
     pull: always
     image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/trivy/client:latest
     resources:
@@ -62,8 +62,28 @@ steps:
       - push
       - tag
 
+       # Trivy Security Scannner
+  - name: scan-base-image
+    pull: always
+    image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/trivy/client:latest
+    resources:
+      limits:
+        cpu: 1000
+        memory: 1024Mi
+    environment:
+      IMAGE_NAME: node:22.4-alpine3.19@sha256:0d1e8c6ff4362814575daee9c21454dd38984ea29571e9f0eb41f4f26dfa0143
+      TOLERATE: MEDIUM,HIGH,CRITICAL
+      FAIL_ON_DETECTION: false
+      IGNORE_UNFIXED: true
+      ALLOW_CVE_LIST_FILE: hof-services-config/html-pdf-converter/trivy-cve-exceptions.txt
+    when:
+      event:
+      - pull_request
+      - push
+      - tag
+
 services:
-- name: docker
+  - name: docker
   image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
 # - name: anchore-submission-server
 #   image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/anchore-submission:latest
