@@ -57,11 +57,9 @@ steps:
       IGNORE_UNFIXED: true
       ALLOW_CVE_LIST_FILE: hof-services-config/html-pdf-converter/trivy-cve-exceptions.txt
     when:
-      event:
-      - pull_request
-      - push
-      - tag
-
+      branch: master
+      event: [ pull request, push, tag ]
+     
        # Trivy Security Scannner
   - name: scan-base-image
     pull: always
@@ -77,11 +75,9 @@ steps:
       IGNORE_UNFIXED: true
       ALLOW_CVE_LIST_FILE: hof-services-config/html-pdf-converter/trivy-cve-exceptions.txt
     when:
-      event:
-      - pull_request
-      - push
-      - tag
-
+      branch: master
+      event: [ pull request, push, tag ]
+      
 services:
   - name: docker
   image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
