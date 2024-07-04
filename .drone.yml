@@ -1,6 +1,10 @@
 kind: pipeline
 name: default
 type: kubernetes
+
+environment: 
+  IMAGE_URL: quay.io/ukhomeofficedigital
+  IMAGE_REPO: html-pdf-converter 
 steps:
   - name: install
     image: node:22
@@ -22,7 +26,8 @@ steps:
     commands:
       # wait for docker service to be up before running docker build
       - n=0; while [ "$n" -lt 60 ] && [ ! docker stats --no-stream ]; do n=$(( n + 1 )); sleep 1; done
-      - docker build -t html-pdf-converter .
+      # - docker build -t html-pdf-converter .
+      -  docker build --no-cache -t $${IMAGE_REPO}:$${DRONE_COMMIT_SHA} .
 
   # - name: scan-image
   #   image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/anchore-submission:latest
@@ -38,7 +43,8 @@ steps:
         from_secret: docker_password
     commands:
       - docker login -u="ukhomeofficedigital+html_pdf_converter" -p=$${DOCKER_PASSWORD} quay.io
-      - docker tag html-pdf-converter quay.io/ukhomeofficedigital/html-pdf-converter:$${DRONE_TAG}
+      #- docker tag html-pdf-converter quay.io/ukhomeofficedigital/html-pdf-converter:$${DRONE_TAG}
+      - docker tag $${IMAGE_REPO}:$${DRONE_COMMIT_SHA} $${IMAGE_URL}/$${IMAGE_REPO}:$${DRONE_COMMIT_SHA}
       - docker push quay.io/ukhomeofficedigital/html-pdf-converter:$${DRONE_TAG}
     when: 
       branch: master
