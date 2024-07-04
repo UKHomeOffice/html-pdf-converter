@@ -1,5 +1,5 @@
-#FROM node:22.4-alpine3.19@sha256:0d1e8c6ff4362814575daee9c21454dd38984ea29571e9f0eb41f4f26dfa0143
-FROM node:18-slim
+FROM node:22.4-alpine3.19@sha256:0d1e8c6ff4362814575daee9c21454dd38984ea29571e9f0eb41f4f26dfa0143
+# FROM node:18-slim
 
 # RUN apk update && apk upgrade
 RUN apt-get update 
