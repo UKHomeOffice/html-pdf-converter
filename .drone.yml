@@ -63,7 +63,7 @@ steps:
       TOLERATE: MEDIUM,HIGH,CRITICAL
       FAIL_ON_DETECTION: false
       IGNORE_UNFIXED: true
-      ALLOW_CVE_LIST_FILE: hof-services-config/html-pdf-converter/trivy-cve-exceptions.txt
+     # ALLOW_CVE_LIST_FILE: hof-services-config/html-pdf-converter/trivy-cve-exceptions.txt
     when:
       branch: master
       event: [ push, pull_request, tag ]
@@ -81,7 +81,7 @@ steps:
       TOLERATE: MEDIUM,HIGH,CRITICAL
       FAIL_ON_DETECTION: false
       IGNORE_UNFIXED: true
-      ALLOW_CVE_LIST_FILE: hof-services-config/html-pdf-converter/trivy-cve-exceptions.txt
+     # ALLOW_CVE_LIST_FILE: hof-services-config/html-pdf-converter/trivy-cve-exceptions.txt
     when:
       branch: master
       event: [ push, pull_request, tag ]
