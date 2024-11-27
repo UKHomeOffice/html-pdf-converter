@@ -844,16 +844,17 @@ escape-string-regexp@^4.0.0:
   resolved "https://registry.yarnpkg.com/escape-string-regexp/-/escape-string-regexp-4.0.0.tgz#14ba83a5d373e3d311e5afca29cf5bfad965bf34"
   integrity sha512-TtpcNJ3XAzx3Gq8sWRzJaVajRs0uVxA2YAkdb1jm2YkPz4G6egUFAyA3n5vtEIZefPk5Wa4UXbKuS5fKkJWdgA==
 
-eslint-config-lennym@^1.1.2:
-  version "1.4.1"
-  resolved "https://registry.yarnpkg.com/eslint-config-lennym/-/eslint-config-lennym-1.4.1.tgz#11c6e751d6fd10139e75399f8c5e212e02be8fd7"
-  integrity sha512-YpaHnPQqnJ0+uOdU3fhVb/L54lEOLXLUPEO1n57Ht/hF7HZDNQyinsXJmK7G4KIQ/rGMZQaPvcR7zMk8QAmxTg==
+eslint-config-lennym@^2.0.0:
+  version "2.3.2"
+  resolved "https://registry.yarnpkg.com/eslint-config-lennym/-/eslint-config-lennym-2.3.2.tgz#4e496bcfbedd9ac1ac7e66179870f9641d40e517"
+  integrity sha512-MRDbK0pnGQlRLLzD3eQfdGbp2UsQa/A9fuQr1H6CzUeaIexML0MsIHYaruGPqCSoGGHnQKkNaz1Oszz4Ah1YfA==
   dependencies:
     eslint-config-semistandard "^11.0.0"
     eslint-config-standard "^10.2.1"
     eslint-plugin-filenames "^1.2.0"
-    eslint-plugin-implicit-dependencies "^1.0.4"
+    eslint-plugin-implicit-dependencies "^1.1.1"
     eslint-plugin-import "^2.7.0"
+    eslint-plugin-no-only-tests "^2.4.0"
     eslint-plugin-node "^5.1.1"
     eslint-plugin-promise "^3.5.0"
     eslint-plugin-react "^7.3.0"
@@ -895,7 +896,7 @@ eslint-plugin-filenames@^1.2.0:
     lodash.snakecase "4.1.1"
     lodash.upperfirst "4.3.1"
 
-eslint-plugin-implicit-dependencies@^1.0.4:
+eslint-plugin-implicit-dependencies@^1.1.1:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/eslint-plugin-implicit-dependencies/-/eslint-plugin-implicit-dependencies-1.1.1.tgz#f538b33410bd9d61546676de9fdaa55080365063"
   integrity sha512-/EbKwaWTASieQR+hWeSIYaNRUCwIn/wAuPNFsiZZTMKYLXegVJyHvepDnJIIpfYWpqtYcrukNLQDit1yfmGD/A==
@@ -927,6 +928,11 @@ eslint-plugin-import@^2.7.0:
     semver "^6.3.1"
     string.prototype.trimend "^1.0.8"
     tsconfig-paths "^3.15.0"
+
+eslint-plugin-no-only-tests@^2.4.0:
+  version "2.6.0"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-no-only-tests/-/eslint-plugin-no-only-tests-2.6.0.tgz#19f6c9620bda02b9b9221b436c5f070e42628d76"
+  integrity sha512-T9SmE/g6UV1uZo1oHAqOvL86XWl7Pl2EpRpnLI8g/bkJu+h7XBCB+1LnubRZ2CUQXj805vh4/CYZdnqtVaEo2Q==
 
 eslint-plugin-node@^5.1.1:
   version "5.2.1"

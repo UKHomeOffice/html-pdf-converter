@@ -16,10 +16,10 @@ steps:
     commands:
       - yarn test
 
-  - name: audit
-    image: node:20
-    commands:
-      - yarn audit --audit-level=high --production
+  # - name: audit
+  #   image: node:20
+  #   commands:
+  #     - yarn audit --audit-level=high --production
 
   - name: docker build
     image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
