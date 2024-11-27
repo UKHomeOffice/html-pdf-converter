@@ -7,17 +7,17 @@ environment:
   IMAGE_REPO: html-pdf-converter 
 steps:
   - name: install
-    image: node:18
+    image: node:20
     commands:
       - npm ci
 
   - name: test
-    image: node:18
+    image: node:20
     commands:
       - npm test
 
   - name: audit
-    image: node:18
+    image: node:20
     commands:
       - npm audit --audit-level=high --production
 
