@@ -9,17 +9,17 @@ steps:
   - name: install
     image: node:20
     commands:
-      - npm ci
+      - yarn ci
 
   - name: test
     image: node:20
     commands:
-      - npm test
+      - yarn test
 
   - name: audit
     image: node:20
     commands:
-      - npm audit --audit-level=high --production
+      - yarn audit --audit-level=high --production
 
   - name: docker build
     image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind

@@ -15,7 +15,7 @@
     "dev": "nodemon -r dotenv/config",
     "unit": "LOG_LEVEL=silent mocha",
     "lint": "eslint .",
-    "test": "npm run unit && npm run lint"
+    "test": "yarn run unit && yarn run lint"
   },
   "dependencies": {
     "body-parser": "^1.17.1",
