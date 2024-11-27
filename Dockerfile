@@ -24,7 +24,6 @@ USER 999
 WORKDIR /app
 
 COPY package.json /app/package.json
-COPY package-lock.json /app/package-lock.json
 RUN yarn install --frozen-lockfile --production --ignore-optional && \
     yarn run postinstall
 
