@@ -49,7 +49,7 @@ steps:
       - docker push $${IMAGE_URL}/$${IMAGE_REPO}:$${DRONE_COMMIT_SHA}
     when: 
       branch: master
-      event: [ push, pull_request ]
+      event: [ push, pull_request, tag ]
   # Trivy Security Scannner
   - name: scan-packages
     pull: always
