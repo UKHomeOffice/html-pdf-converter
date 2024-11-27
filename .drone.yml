@@ -60,7 +60,7 @@ steps:
         memory: 1024Mi
     environment:
       IMAGE_NAME: html-pdf-converter:${DRONE_COMMIT_SHA}
-      TOLERATE: MEDIUM,HIGH,CRITICAL
+      TOLERATE: MEDIUM,HIGH,CRITICAL --dependency-tree --format table
       FAIL_ON_DETECTION: false
       IGNORE_UNFIXED: true
      # ALLOW_CVE_LIST_FILE: hof-services-config/html-pdf-converter/trivy-cve-exceptions.txt
@@ -78,7 +78,7 @@ steps:
         memory: 1024Mi
     environment:
       IMAGE_NAME: node:22-slim@sha256:ee76feb064dbe3579085bc2517cb54ecf64b083db8f6f80341cfe4a4770d1415
-      TOLERATE: MEDIUM,HIGH,CRITICAL
+      TOLERATE: MEDIUM,HIGH,CRITICAL --dependency-tree --format table
       FAIL_ON_DETECTION: false
       IGNORE_UNFIXED: true
      # ALLOW_CVE_LIST_FILE: hof-services-config/html-pdf-converter/trivy-cve-exceptions.txt
