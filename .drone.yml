@@ -9,7 +9,7 @@ steps:
   - name: install
     image: node:20
     commands:
-      - yarn ci
+      - yarn install
 
   - name: test
     image: node:20
