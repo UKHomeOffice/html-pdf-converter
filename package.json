@@ -32,7 +32,7 @@
   "devDependencies": {
     "choma": "^1.2.1",
     "dotenv": "^16.0.3",
-    "eslint": "^8.28.0",
+    "eslint": "^9.0.0",
     "eslint-config-lennym": "^1.1.2",
     "mocha": "^10.1.0",
     "nodemon": "^3.1.4",
