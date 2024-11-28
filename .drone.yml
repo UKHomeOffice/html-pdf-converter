@@ -77,7 +77,7 @@ steps:
         cpu: 1000
         memory: 1024Mi
     environment:
-      IMAGE_NAME: node:22-slim@sha256:ee76feb064dbe3579085bc2517cb54ecf64b083db8f6f80341cfe4a4770d1415
+      IMAGE_NAME: node:20.18.0-alpine3.20@sha256:d504f23acdda979406cf3bdbff0dff7933e5c4ec183dda404ed24286c6125e60
       TOLERATE: MEDIUM,HIGH,CRITICAL
       FAIL_ON_DETECTION: false
       IGNORE_UNFIXED: true
