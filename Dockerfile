@@ -24,8 +24,7 @@ USER 999
 WORKDIR /app
 
 COPY package.json /app/package.json
-RUN yarn install --frozen-lockfile --production --ignore-optional && \
-    yarn run postinstall
+RUN yarn install --frozen-lockfile --production --ignore-optional
 
 # ensure user can exec the chrome binaries installed into the puppeteer directory
 RUN chown -R app:app /app/node_modules/puppeteer
