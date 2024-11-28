@@ -1,4 +1,5 @@
 'use strict';
+/* eslint-disable consistent-return */
 
 const debug = require('debug')('pdf:middleware:render');
 const mustache = require('mustache');

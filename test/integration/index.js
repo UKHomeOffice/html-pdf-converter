@@ -16,7 +16,6 @@ const App = require('../../');
 const result = Buffer.from('');
 
 describe('POSTing to /convert', () => {
-
   let pdfStub;
   let setContentStub;
 
@@ -40,7 +39,6 @@ describe('POSTing to /convert', () => {
   });
 
   describe('without a template', () => {
-
     it('returns a NoTemplate, 400 JSON error', () =>
       supertest(App)
         .post('/convert')
@@ -50,11 +48,9 @@ describe('POSTing to /convert', () => {
           message: 'Template must be supplied'
         })
     );
-
   });
 
   describe('with a non-string template', () => {
-
     it('returns a InvalidTemplate, 400 JSON error', () =>
       supertest(App)
         .post('/convert')
@@ -65,11 +61,9 @@ describe('POSTing to /convert', () => {
           message: 'Template must be a string'
         })
     );
-
   });
 
   describe('with a mustache template and incomplete data', () => {
-
     it('returns a MissingTemplateData, 400 JSON error', () => {
       return supertest(App)
         .post('/convert')
@@ -83,11 +77,9 @@ describe('POSTing to /convert', () => {
           message: 'Data missing: header,para'
         });
     });
-
   });
 
   describe('if the client can\'t connect to chrome', () => {
-
     beforeEach(() => {
       puppeteer.launch.rejects({ code: 'ECONNREFUSED' });
     });
@@ -103,11 +95,9 @@ describe('POSTing to /convert', () => {
         })
         .expect(res => assert.ok(res.error instanceof Error));
     });
-
   });
 
   describe('with a valid html string', () => {
-
     it('renders the html without calling a mustache render', () => {
       return supertest(App)
         .post('/convert')
@@ -177,7 +167,5 @@ describe('POSTing to /convert', () => {
           assert(setContentStub.calledWith(sinon.match.string, { waitUntil: 'load' }));
         });
     });
-
   });
-
 });

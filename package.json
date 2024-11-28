@@ -14,7 +14,7 @@
     "start": "node .",
     "dev": "nodemon -r dotenv/config",
     "unit": "LOG_LEVEL=silent mocha",
-    "lint": "eslint .",
+    "lint": "eslint . --config ./node_modules/eslint-config-hof/default.js",
     "test": "yarn run unit && yarn run lint"
   },
   "dependencies": {
