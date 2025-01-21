@@ -3,7 +3,7 @@
   "description": "An HTML to PDF conversion service wrapper",
   "version": "2.4.3",
   "license": "MIT",
-  "author": "Joe Chapman joseph@creatify.io",
+  "author": "Aditya Babu Mallisetti",
   "repository": "git+https://github.com/UKHomeOffice/html-pdf-converter.git",
   "bugs": {
     "url": "https://github.com/UKHomeOffice/html-pdf-converter/issues"
