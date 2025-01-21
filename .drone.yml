@@ -3,17 +3,17 @@ name: default
 type: kubernetes
 steps:
   - name: install
-    image: node:14
+    image: node@sha256:87608ec5109795be954baa2f5b0b6da1911423d8b44b58fecda31f81d28bfc0f
     commands:
       - npm ci
 
   - name: test
-    image: node:14
+    image: node@sha256:87608ec5109795be954baa2f5b0b6da1911423d8b44b58fecda31f81d28bfc0f
     commands:
       - npm test
 
   - name: audit
-    image: node:14
+    image: node@sha256:87608ec5109795be954baa2f5b0b6da1911423d8b44b58fecda31f81d28bfc0f
     commands:
       - npm audit --audit-level=high --production
 
@@ -46,7 +46,7 @@ steps:
 services:
 - name: docker
   image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
-  
+
 - name: anchore-submission-server
   image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/anchore-submission:latest
   pull: always
