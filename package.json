@@ -25,15 +25,15 @@
     "hof-logger": "2.0.0",
     "lodash": "^4.17.21",
     "mustache": "^2.3.2",
-    "puppeteer": "^3.3.0"
+    "puppeteer": "^24.1.0"
   },
   "devDependencies": {
     "choma": "^1.2.1",
     "dotenv": "^16.0.3",
     "eslint": "^8.28.0",
-    "eslint-config-lennym": "^2.3.2",
+    "eslint-config-lennym": "^1.1.2",
     "mocha": "^10.1.0",
-    "nodemon": "^2.0.20",
+    "nodemon": "^3.1.9",
     "sinon": "^2.4.1",
     "supertest": "^3.4.2"
   }
