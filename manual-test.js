@@ -21,3 +21,4 @@ fetch(`http://${config.host}:${config.port}/convert`, params)
     console.error(e);
     process.exit(1);
   });
+  
