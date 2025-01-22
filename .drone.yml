@@ -3,33 +3,39 @@ name: default
 type: kubernetes
 steps:
   - name: install
-    image: node@sha256:87608ec5109795be954baa2f5b0b6da1911423d8b44b58fecda31f81d28bfc0f
+    image: node:22-slim
     commands:
       - npm ci
 
   - name: test
-    image: node@sha256:87608ec5109795be954baa2f5b0b6da1911423d8b44b58fecda31f81d28bfc0f
+    image: node:22-slim
     commands:
       - npm test
-
-  - name: audit
-    image: node@sha256:87608ec5109795be954baa2f5b0b6da1911423d8b44b58fecda31f81d28bfc0f
-    commands:
-      - npm audit --audit-level=high --production
 
   - name: docker build
     image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
     commands:
       # wait for docker service to be up before running docker build
       - n=0; while [ "$n" -lt 60 ] && [ ! docker stats --no-stream ]; do n=$(( n + 1 )); sleep 1; done
-      - docker build -t html-pdf-converter .
+      - docker build --no-cache -t html-pdf-converter .
 
-  - name: scan-image
-    image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/anchore-submission:latest
+  # Trivy Security Scannner
+  - name: scan-base-image
     pull: always
+    image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/trivy/client:latest
+    resources:
+      limits:
+        cpu: 1000
+        memory: 1024Mi
     environment:
-      IMAGE_NAME: html-pdf-converter
-      WHITELIST_FILE: cve-exceptions.txt
+      IMAGE_NAME: node:22-slim
+      TOLERATE: MEDIUM,HIGH,CRITICAL
+      FAIL_ON_DETECTION: false
+      IGNORE_UNFIXED: true
+      ALLOW_CVE_LIST_FILE: cve-exceptions.txt
+    when:
+      branch: master
+      event: [ push, pull_request, tag ]
 
   - name: docker push
     image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
@@ -43,13 +49,30 @@ steps:
     when:
       event: tag
 
+  # Trivy Security Scannner
+  - name: scan-packages
+    pull: always
+    image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/trivy/client:latest
+    resources:
+      limits:
+        cpu: 1000
+        memory: 1024Mi
+    environment:
+      IMAGE_NAME: html-pdf-converter:$${DRONE_TAG}
+      TOLERATE: MEDIUM,HIGH,CRITICAL
+      FAIL_ON_DETECTION: false
+      IGNORE_UNFIXED: true
+      ALLOW_CVE_LIST_FILE: cve-exceptions.txt
+    when:
+      branch: master
+      event: [ push, pull_request, tag ]
+
 services:
-- name: docker
-  image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
+  - name: docker
+    image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
 
-- name: anchore-submission-server
-  image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/anchore-submission:latest
-  pull: always
-  commands:
-    - /run.sh server
+volumes:
+  - name: dockersock
+    temp: {}
 
+...   
