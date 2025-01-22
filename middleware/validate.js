@@ -28,7 +28,7 @@ module.exports = (req, res, next) => {
     }));
   }
 
-  missing = missingData(template, req.body.data);
+  const missing = missingData(template, req.body.data);
   if (missing.length > 0) {
     return next(new ValidationError({
       code: 'MissingData',

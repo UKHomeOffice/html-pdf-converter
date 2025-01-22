@@ -6,9 +6,7 @@ const validate = require('../../../middleware/validate');
 const ValidationError = require('../../../lib/validation-error');
 
 describe('middleware/validate', () => {
-
   describe('called with no template', () => {
-
     const req = {
       log: sinon.stub(),
       body: {
@@ -25,11 +23,9 @@ describe('middleware/validate', () => {
         assert.equal(error.message, 'Template must be supplied');
       })
     );
-
   });
 
   describe('called with a template that is not a string', () => {
-
     const req = {
       log: sinon.stub(),
       body: {
@@ -46,11 +42,9 @@ describe('middleware/validate', () => {
         assert.equal(error.message, 'Template must be a string');
       })
     );
-
   });
 
   describe('called with a mustache template and missing data', () => {
-
     const req = {
       log: sinon.stub(),
       body: {
@@ -68,11 +62,9 @@ describe('middleware/validate', () => {
         assert.equal(error.message, 'Data missing: content');
       })
     );
-
   });
 
   describe('called with a HTML template string', () => {
-
     const req = {
       log: sinon.stub(),
       body: {
@@ -86,11 +78,9 @@ describe('middleware/validate', () => {
         assert.ok(error === undefined);
       })
     );
-
   });
 
   describe('called with a mustache template with data', () => {
-
     const req = {
       log: sinon.stub(),
       body: {
@@ -107,7 +97,5 @@ describe('middleware/validate', () => {
         assert.ok(error === undefined);
       })
     );
-
   });
-
 });
