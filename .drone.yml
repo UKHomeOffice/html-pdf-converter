@@ -5,12 +5,12 @@ steps:
   - name: install
     image: node:22-slim
     commands:
-      - npm ci
+      - yarn install
 
   - name: test
     image: node:22-slim
     commands:
-      - npm test
+      - yarn test
 
   - name: docker build
     image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
