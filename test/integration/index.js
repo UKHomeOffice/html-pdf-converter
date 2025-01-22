@@ -98,7 +98,6 @@ describe('POSTing to /convert', () => {
   });
 
   describe('with a valid html string', () => {
-
     it('renders the html without calling a mustache render', () => {
       return supertest(App)
         .post('/convert')
@@ -168,7 +167,5 @@ describe('POSTing to /convert', () => {
           assert(setContentStub.calledWith(sinon.match.string, { waitUntil: 'load' }));
         });
     });
-
   });
-
 });
