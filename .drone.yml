@@ -90,7 +90,7 @@ steps:
         cpu: 1000
         memory: 1024Mi
     environment:
-      IMAGE_NAME: $${IMAGE_REPO}:${DRONE_COMMIT_SHA}
+      IMAGE_NAME: ${IMAGE_REPO}:${DRONE_COMMIT_SHA}
       SERVICE_URL: https://acp-trivy-helm.acp-trivy.svc.cluster.local:443 
       TOLERATE: MEDIUM,HIGH,CRITICAL
       FAIL_ON_DETECTION: false
