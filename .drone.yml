@@ -7,13 +7,23 @@ steps:
     image: node:22-slim
     commands:
       - yarn install
+    when:
+      branch:
+        include:
+        - master
+      event: [ push, pull_request, tag ]
 
   - name: test
     image: node:22-slim
     commands:
       - yarn test
+    when:
+      branch:
+        include:
+        - master
+      event: [ push, pull_request, tag ]
 
-  - name: docker build
+  - name: docker_build
     image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
     commands:
       # wait for docker service to be up before running docker build
@@ -22,6 +32,13 @@ steps:
     volumes:
       - name: dockersock
         path: /var/run
+    when:
+      branch:
+        include:
+        - master
+      event: [ push, pull_request, tag ]
+    depends_on:
+      - test
 
   # Trivy Security Scannner
   - name: scan-base-image
@@ -33,6 +50,7 @@ steps:
         memory: 1024Mi
     environment:
       IMAGE_NAME: node:22-slim
+      SERVICE_URL: https://acp-trivy-helm.acp-trivy.svc.cluster.local:443 
       TOLERATE: MEDIUM,HIGH,CRITICAL
       FAIL_ON_DETECTION: false
       IGNORE_UNFIXED: true
@@ -45,8 +63,10 @@ steps:
         include:
         - master
       event: [ push, pull_request, tag ]
+    depends_on:
+      - test
 
-  - name: docker push
+  - name: docker_push
     image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
     environment:
       DOCKER_PASSWORD:
@@ -67,7 +87,8 @@ steps:
         cpu: 1000
         memory: 1024Mi
     environment:
-      IMAGE_NAME: html-pdf-converter:$${DRONE_TAG}
+      IMAGE_NAME: html-pdf-converter:${DRONE_TAG}
+      SERVICE_URL: https://acp-trivy-helm.acp-trivy.svc.cluster.local:443 
       TOLERATE: MEDIUM,HIGH,CRITICAL
       FAIL_ON_DETECTION: false
       IGNORE_UNFIXED: true
@@ -80,6 +101,8 @@ steps:
         include:
         - master
       event: [ push, pull_request, tag ]
+    depends_on:
+      - docker_push
 
 services:
   - name: docker
