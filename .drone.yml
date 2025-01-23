@@ -87,7 +87,10 @@ steps:
         - master
       event: [ push, pull_request, tag ]
     depends_on:
-      - docker_push
+      - scan-packages
+      - scan-base-image
+      - test
+      - docker_build
 
   # Trivy Security Scannner
   - name: scan-packages
