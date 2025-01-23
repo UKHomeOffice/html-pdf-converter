@@ -116,7 +116,7 @@ steps:
         - master
       event: [ push, pull_request, tag ]
     depends_on:
-      - docker_push
+      - docker_build
 
 services:
   - name: docker
