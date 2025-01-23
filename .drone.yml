@@ -1,6 +1,7 @@
 kind: pipeline
 name: default
 type: kubernetes
+
 steps:
   - name: install
     image: node:22-slim
@@ -18,6 +19,9 @@ steps:
       # wait for docker service to be up before running docker build
       - n=0; while [ "$n" -lt 60 ] && [ ! docker stats --no-stream ]; do n=$(( n + 1 )); sleep 1; done
       - docker build --no-cache -t html-pdf-converter .
+    volumes:
+      - name: dockersock
+        path: /var/run
 
   # Trivy Security Scannner
   - name: scan-base-image
@@ -33,8 +37,13 @@ steps:
       FAIL_ON_DETECTION: false
       IGNORE_UNFIXED: true
       ALLOW_CVE_LIST_FILE: cve-exceptions.txt
+    volumes:
+      - name: dockersock
+        path: /var/run
     when:
-      branch: master
+      branch:
+        include:
+        - master
       event: [ push, pull_request, tag ]
 
   - name: docker push
@@ -63,8 +72,13 @@ steps:
       FAIL_ON_DETECTION: false
       IGNORE_UNFIXED: true
       ALLOW_CVE_LIST_FILE: cve-exceptions.txt
+    volumes:
+      - name: dockersock
+        path: /var/run
     when:
-      branch: master
+      branch:
+        include:
+        - master
       event: [ push, pull_request, tag ]
 
 services:
