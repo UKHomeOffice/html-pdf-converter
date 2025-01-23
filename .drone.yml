@@ -87,7 +87,6 @@ steps:
         - master
       event: [ push, pull_request, tag ]
     depends_on:
-      - scan-packages
       - scan-base-image
       - test
       - docker_build
