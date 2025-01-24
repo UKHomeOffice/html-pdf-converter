@@ -7,7 +7,7 @@ environment:
   IMAGE_REPO: html-pdf-converter
 # Update the VERSION to a new value for significant changes or releases
 # Follow semantic versioning (e.g., v3.0.1 for patches, v3.1.0 for minor changes, v4.0.0 for major changes)
-  VERSION: v3.0.0
+  VERSION: 3.0.0
 
 steps:
   - name: install
