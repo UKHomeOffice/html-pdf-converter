@@ -75,8 +75,8 @@ steps:
       DOCKER_PASSWORD:
         from_secret: docker_password
     commands:
-      - docker login -u="ukhomeofficedigital-html_pdf_converter" -p=$${DOCKER_PASSWORD} quay.io
-      - docker tag $${IMAGE_REPO}:$${DRONE_COMMIT_SHA} $${IMAGE_URL}/$${IMAGE_REPO}:$${VERSION}
+      - docker login -u="ukhomeofficedigital+html_pdf_converter" -p=$${DOCKER_PASSWORD} quay.io
+      - docker tag $${IMAGE_REPO}:$${DRONE-COMMIT_SHA} $${IMAGE_URL}/$${IMAGE_REPO}:$${VERSION}
       - docker push $${IMAGE_URL}/$${IMAGE_REPO}:$${VERSION}
     when:
       branch:
