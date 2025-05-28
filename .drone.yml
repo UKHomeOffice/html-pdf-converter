@@ -9,6 +9,7 @@ environment:
 # Follow semantic versioning (e.g., v3.0.1 for patches, v3.1.0 for minor changes, v4.0.0 for major changes)
   VERSION: 3.0.0
 
+#
 steps:
   - name: install
     image: node:22-slim
