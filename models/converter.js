@@ -3,9 +3,7 @@
 const puppeteer = require('puppeteer');
 
 module.exports = class PDFConverterModel {
-
   create(html, options) {
-
     const opts = {
       args: [
         '--no-sandbox',
@@ -33,7 +31,5 @@ module.exports = class PDFConverterModel {
               .then(() => data);
           });
       });
-
   }
-
 };

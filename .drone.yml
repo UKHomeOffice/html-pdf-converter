@@ -1,54 +1,119 @@
 kind: pipeline
 name: default
 type: kubernetes
+
+environment:
+  IMAGE_URL: quay.io/ukhomeofficedigital
+  IMAGE_REPO: html-pdf-converter
+# Update the VERSION to a new value for significant changes or releases
+# Follow semantic versioning (e.g., v3.0.1 for patches, v3.1.0 for minor changes, v4.0.0 for major changes)
+  VERSION: 3.0.0
+
 steps:
   - name: install
-    image: node:14
+    image: node:22-slim
     commands:
-      - npm ci
+      - yarn install
+    when:
+      branch:
+        include:
+        - master
+      event: [ push, pull_request, tag ]
 
   - name: test
-    image: node:14
+    image: node:22-slim
     commands:
-      - npm test
+      - yarn test
+    when:
+      branch:
+        include:
+        - master
+      event: [ push, pull_request, tag ]  
 
-  - name: audit
-    image: node:14
-    commands:
-      - npm audit --audit-level=high --production
-
-  - name: docker build
+  - name: docker_build
     image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
     commands:
       # wait for docker service to be up before running docker build
       - n=0; while [ "$n" -lt 60 ] && [ ! docker stats --no-stream ]; do n=$(( n + 1 )); sleep 1; done
-      - docker build -t html-pdf-converter .
+      - docker build --no-cache -t $${IMAGE_REPO}:$${DRONE_COMMIT_SHA} .
+    volumes:
+      - name: dockersock
+        path: /var/run
+    when:
+      branch:
+        include:
+        - master
+      event: [ push, pull_request, tag ]
 
-  - name: scan-image
-    image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/anchore-submission:latest
+  # Trivy Security Scannner
+  - name: scan-base-image
     pull: always
+    image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/trivy/client:latest
+    resources:
+      limits:
+        cpu: 1000
+        memory: 1024Mi
     environment:
-      IMAGE_NAME: html-pdf-converter
-      WHITELIST_FILE: cve-exceptions.txt
+      IMAGE_NAME: node:22-slim
+      SERVICE_URL: https://acp-trivy-helm.acp-trivy.svc.cluster.local:443 
+      TOLERATE: MEDIUM,HIGH,CRITICAL
+      FAIL_ON_DETECTION: false
+      IGNORE_UNFIXED: true
+      ALLOW_CVE_LIST_FILE: cve-exceptions.txt
+    volumes:
+      - name: dockersock
+        path: /var/run
+    when:
+      branch:
+        include:
+        - master
+      event: [ push, pull_request, tag ]
 
-  - name: docker push
+  - name: docker_push
     image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
     environment:
       DOCKER_PASSWORD:
         from_secret: docker_password
     commands:
       - docker login -u="ukhomeofficedigital+html_pdf_converter" -p=$${DOCKER_PASSWORD} quay.io
-      - docker tag html-pdf-converter quay.io/ukhomeofficedigital/html-pdf-converter:$${DRONE_TAG}
-      - docker push quay.io/ukhomeofficedigital/html-pdf-converter:$${DRONE_TAG}
+      - docker tag $${IMAGE_REPO}:$${DRONE_COMMIT_SHA} $${IMAGE_URL}/$${IMAGE_REPO}:$${VERSION}
+      - docker push $${IMAGE_URL}/$${IMAGE_REPO}:$${VERSION}
     when:
-      event: tag
+      branch:
+        include:
+        - master
+      event: [ push, pull_request, tag ]
+
+  # Trivy Security Scannner
+  - name: scan-packages
+    pull: always
+    image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/trivy/client:latest
+    resources:
+      limits:
+        cpu: 1000
+        memory: 1024Mi
+    environment:
+      IMAGE_NAME: html-pdf-converter:${DRONE_COMMIT_SHA}
+      SERVICE_URL: https://acp-trivy-helm.acp-trivy.svc.cluster.local:443 
+      TOLERATE: MEDIUM,HIGH,CRITICAL
+      FAIL_ON_DETECTION: false
+      IGNORE_UNFIXED: true
+      ALLOW_CVE_LIST_FILE: cve-exceptions.txt
+    volumes:
+      - name: dockersock
+        path: /var/run
+    when:
+      branch:
+        include:
+        - master
+      event: [ push, pull_request, tag ]
 
 services:
-- name: docker
-  image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
-- name: anchore-submission-server
-  image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/anchore-submission:latest
-  pull: always
-  commands:
-    - /run.sh server
+  - name: docker
+    image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
 
+volumes:
+  - name: dockersock
+    temp: {}
+
+...   

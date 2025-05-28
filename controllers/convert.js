@@ -10,7 +10,6 @@ module.exports = router.post('/',
   validate,
   render,
   (req, res, next) => {
-
     debug('Validated and rendered %s', res.locals.html);
 
     const model = new Model();
