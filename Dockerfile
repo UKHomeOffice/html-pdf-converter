@@ -20,15 +20,18 @@ RUN adduser --system app --uid 999 --home /app/
 RUN adduser app app
 RUN chown -R app:app /app/
 
-USER 999
 WORKDIR /app
 
 COPY package.json /app/package.json
 RUN yarn install --frozen-lockfile --production --ignore-optional
 
-# ensure user can exec the chrome binaries installed into the puppeteer directory
-RUN chown -R app:app /app/node_modules/puppeteer
-
 COPY . /app
+
+# Runtime image does not need npm/npx; removing them drops npm's vulnerable transitive packages.
+RUN rm -rf /usr/local/lib/node_modules/npm \
+	&& rm -f /usr/local/bin/npm /usr/local/bin/npx \
+	&& chown -R app:app /app
+
+USER 999
 
 CMD node --unhandled-rejections=strict index.js
