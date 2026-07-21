@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "html-pdf-converter.fullname" . }}-config
+  labels:
+    {{- include "html-pdf-converter.labels" . | nindent 4 }}
+data:
+  APP_PORT: {{ .Values.env.APP_PORT | quote }}
+  APP_HOST: {{ .Values.env.APP_HOST | quote }}
+  LOG_LEVEL: {{ .Values.env.LOG_LEVEL | quote }}
+  BODY_SIZE_LIMIT: {{ .Values.env.BODY_SIZE_LIMIT | quote }}

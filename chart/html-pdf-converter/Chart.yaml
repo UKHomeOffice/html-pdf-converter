@@ -1,0 +1,8 @@
+apiVersion: v2
+name: html-pdf-converter
+description: Helm chart for the UK Home Office HTML PDF Converter service
+type: application
+maintainers:
+  - name: UKHomeOffice
+version: 0.1.0
+appVersion: "3.0.0"
