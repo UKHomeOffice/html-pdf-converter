@@ -56,7 +56,7 @@ steps:
     environment:
       IMAGE_NAME: node:24-slim
       SERVICE_URL: https://acp-trivy-helm.acp-trivy.svc.cluster.local:443 
-      TOLERATE: HIGH,CRITICAL
+      TOLERATE: HIGH,CRITICAL --dependency-tree
       FAIL_ON_DETECTION: false
       IGNORE_UNFIXED: true
       ALLOW_CVE_LIST_FILE: cve-exceptions.txt
@@ -95,7 +95,7 @@ steps:
     environment:
       IMAGE_NAME: html-pdf-converter:${DRONE_COMMIT_SHA}
       SERVICE_URL: https://acp-trivy-helm.acp-trivy.svc.cluster.local:443 
-      TOLERATE: HIGH,CRITICAL
+      TOLERATE: HIGH,CRITICAL --dependency-tree
       FAIL_ON_DETECTION: false
       IGNORE_UNFIXED: true
       ALLOW_CVE_LIST_FILE: cve-exceptions.txt
