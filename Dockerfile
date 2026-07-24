@@ -1,31 +1,27 @@
-FROM node:24.18.0-slim
+FROM node:24.18.0-alpine3.24
 
-# Install latest chrome dev package, which installs the necessary libs to
-# make the bundled version of Chromium that Puppeteer installs work.
+ENV PUPPETEER_SKIP_DOWNLOAD=true \
+	PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
-RUN apt-get update && apt-get upgrade -y \
-	&& apt-get install -y curl gnupg --no-install-recommends \
-	&& curl -k https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - \
-	&& sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list' \
-	&& apt-get update \
-	&& apt-get install -y google-chrome-unstable --no-install-recommends \
-	&& npm update -g npm yarn \
-    # Upgrade bundled npm deps so Trivy does not report vulnerable tar/undici from base image toolchain
-    && npm install -g npm@12.0.1 \
+RUN apk update && apk upgrade \
+	&& apk add --no-cache chromium nss freetype harfbuzz ca-certificates ttf-freefont \
+	&& corepack enable \
+	&& npm install -g npm@12.0.1 yarn@1.22.22 \
 	&& npm --version \
 	&& yarn --version \
-	&& addgroup --system app \
-	&& adduser --system app --uid 999 --home /app/ \
-	&& adduser app app \
-	&& chown -R app:app /app/
+	&& addgroup -S app \
+	&& adduser -S -u 999 -G app -h /app app \
+	&& mkdir -p /app \
+	&& chown -R app:app /app \
+	&& test -x /usr/bin/chromium-browser || ln -s /usr/bin/chromium /usr/bin/chromium-browser
 
-USER 999
+USER app
 WORKDIR /app
 
-COPY package.json /app/package.json
+COPY package.json yarn.lock /app/
 RUN yarn install --frozen-lockfile --production --ignore-optional \
 	&& chown -R app:app /app/node_modules/puppeteer
 
 COPY . /app
 
-CMD node --unhandled-rejections=strict index.js
+CMD ["node", "--unhandled-rejections=strict", "index.js"]
