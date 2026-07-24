@@ -6,7 +6,8 @@ ENV PUPPETEER_SKIP_DOWNLOAD=true \
 RUN apk update && apk upgrade \
 	&& apk add --no-cache chromium nss freetype harfbuzz ca-certificates ttf-freefont \
 	&& corepack enable \
-	&& npm install -g npm@12.0.1 yarn@1.22.22 \
+	&& corepack prepare yarn@1.22.22 --activate \
+	&& npm install -g npm@12.0.1 \
 	&& npm --version \
 	&& yarn --version \
 	&& addgroup -S app \
