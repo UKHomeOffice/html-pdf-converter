@@ -6,7 +6,7 @@
 
 #### Uses Chrome Headless to convert HTML to a PDF
 
-Send a HTML or Mustache template and recieve a PDF stream as the response.
+Send a HTML or Mustache template and receive a PDF stream as the response.
 
 ## Install and start
 
