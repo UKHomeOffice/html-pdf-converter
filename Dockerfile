@@ -1,5 +1,4 @@
-FROM node:24.18.0-alpine3.24
-
+FROM node:24.18.0-alpine3.24@sha256:4ba75f835bb8802193e4c114572113d4b26f95f6f094f4b5229d2a77773e0afc
 ENV PUPPETEER_SKIP_DOWNLOAD=true \
 	PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
@@ -16,7 +15,7 @@ RUN apk update && apk upgrade \
 	&& chown -R app:app /app \
 	&& test -x /usr/bin/chromium-browser || ln -s /usr/bin/chromium /usr/bin/chromium-browser
 
-USER app
+USER 999
 WORKDIR /app
 
 COPY package.json yarn.lock /app/
