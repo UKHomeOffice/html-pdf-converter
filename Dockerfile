@@ -1,4 +1,5 @@
 FROM node:24.18.0-alpine3.24@sha256:4ba75f835bb8802193e4c114572113d4b26f95f6f094f4b5229d2a77773e0afc
+
 ENV PUPPETEER_SKIP_DOWNLOAD=true \
 	PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
@@ -22,9 +23,6 @@ WORKDIR /app
 COPY package.json yarn.lock /app/
 RUN yarn install --frozen-lockfile --production --ignore-optional \
 	&& chown -R app:app /app/node_modules/puppeteer
-
-RUN yarn upgrade brace-expansion@5.0.8
-
 
 COPY . /app
 
