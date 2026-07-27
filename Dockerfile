@@ -23,8 +23,7 @@ COPY package.json yarn.lock /app/
 RUN yarn install --frozen-lockfile --production --ignore-optional \
 	&& chown -R app:app /app/node_modules/puppeteer
 
-RUN yarn cache clean --force \
-    && yarn upgrade brace-expansion@5.0.8
+RUN yarn upgrade brace-expansion@5.0.8
 
 
 COPY . /app
