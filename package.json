@@ -1,7 +1,7 @@
 {
   "name": "html-pdf-converter",
   "description": "An HTML to PDF conversion service wrapper",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "license": "MIT",
   "author": "Aditya Babu Mallisetti",
   "repository": "git+https://github.com/UKHomeOffice/html-pdf-converter.git",
@@ -11,7 +11,7 @@
   "homepage": "https://github.com/UKHomeOffice/html-pdf-converter#readme",
   "main": "index.js",
   "engines": {
-    "node": ">=24 <25"
+    "node": ">=24.18.0 <25.0.0"
   },
   "scripts": {
     "start": "node .",
@@ -43,6 +43,7 @@
   },
   "resolutions": {
     "serialize-javascript": "^7.0.7",
-    "diff": "^8.0.4"
+    "diff": "^8.0.4",
+    "brace-expansion": "5.0.8"
   }
 }

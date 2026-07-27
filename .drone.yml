@@ -11,7 +11,7 @@ environment:
 
 steps:
   - name: install
-    image: node:24-slim
+    image: node:24.18.0-alpine3.24@sha256:4ba75f835bb8802193e4c114572113d4b26f95f6f094f4b5229d2a77773e0afc
     commands:
       - yarn install
     when:
@@ -21,7 +21,7 @@ steps:
       event: [ push, pull_request, tag ]
 
   - name: test
-    image: node:24-slim
+    image: node:24.18.0-alpine3.24@sha256:4ba75f835bb8802193e4c114572113d4b26f95f6f094f4b5229d2a77773e0afc
     commands:
       - yarn test
     when:
@@ -54,9 +54,9 @@ steps:
         cpu: 1000
         memory: 1024Mi
     environment:
-      IMAGE_NAME: node:24-slim
+      IMAGE_NAME: node:24.18.0-alpine3.24@sha256:4ba75f835bb8802193e4c114572113d4b26f95f6f094f4b5229d2a77773e0afc
       SERVICE_URL: https://acp-trivy-helm.acp-trivy.svc.cluster.local:443 
-      TOLERATE: MEDIUM,HIGH,CRITICAL
+      TOLERATE: MEDIUM,HIGH,CRITICAL --vuln-type os,library
       FAIL_ON_DETECTION: false
       IGNORE_UNFIXED: true
       ALLOW_CVE_LIST_FILE: cve-exceptions.txt
@@ -95,7 +95,7 @@ steps:
     environment:
       IMAGE_NAME: html-pdf-converter:${DRONE_COMMIT_SHA}
       SERVICE_URL: https://acp-trivy-helm.acp-trivy.svc.cluster.local:443 
-      TOLERATE: MEDIUM,HIGH,CRITICAL
+      TOLERATE: MEDIUM,HIGH,CRITICAL --vuln-type os,library
       FAIL_ON_DETECTION: false
       IGNORE_UNFIXED: true
       ALLOW_CVE_LIST_FILE: cve-exceptions.txt
