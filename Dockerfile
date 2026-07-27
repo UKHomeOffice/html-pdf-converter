@@ -9,6 +9,7 @@ RUN apk update && apk upgrade \
 	&& npm install -g npm@latest \
 	&& npm --version \
 	&& yarn --version \
+	&& rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx \
 	&& addgroup -S app \
 	&& adduser -S -u 999 -G app -h /app app \
 	&& mkdir -p /app \
@@ -21,6 +22,11 @@ WORKDIR /app
 COPY package.json yarn.lock /app/
 RUN yarn install --frozen-lockfile --production --ignore-optional \
 	&& chown -R app:app /app/node_modules/puppeteer
+
+RUN yarn cache clean --force \
+    && rm -rf /tmp/* /var/cache/apk/* \
+    && yarn upgrade brace-expansion@5.0.8
+
 
 COPY . /app
 
