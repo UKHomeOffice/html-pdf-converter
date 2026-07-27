@@ -24,7 +24,6 @@ RUN yarn install --frozen-lockfile --production --ignore-optional \
 	&& chown -R app:app /app/node_modules/puppeteer
 
 RUN yarn cache clean --force \
-    && rm -rf /tmp/* /var/cache/apk/* \
     && yarn upgrade brace-expansion@5.0.8
 
 
