@@ -21,6 +21,7 @@ steps:
       DOCKER_PASSWORD:
         from_secret: docker_password
     commands:
+      - n=0; while [ "$n" -lt 60 ] && [ ! docker stats --no-stream ]; do n=$(( n + 1 )); sleep 1; done
       - docker login -u="ukhomeofficedigital+html_pdf_converter" -p=$${DOCKER_PASSWORD} quay.io
       - docker pull quay.io/ukhomeofficedigital/html-pdf-converter@sha256:42b150c3c441f72ea5d4dc50673fb82e47b1705652bcf62c9b48836e3f70f8ed
       - docker tag quay.io/ukhomeofficedigital/html-pdf-converter@sha256:42b150c3c441f72ea5d4dc50673fb82e47b1705652bcf62c9b48836e3f70f8ed $${IMAGE_URL}/$${IMAGE_REPO}:3.1.0
