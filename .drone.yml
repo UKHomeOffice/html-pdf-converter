@@ -30,8 +30,6 @@ steps:
         include:
         - master
       event: [ push, pull_request, tag ]
-    depends_on:
-      - docker_push
 
 services:
   - name: docker
