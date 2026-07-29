@@ -33,4 +33,4 @@ jobs:
 
     secrets:
       AWS_ECR_ACCOUNT_ID: ${{ secrets.AWS_ECR_ACCOUNT_ID }}
-      ROLE_TO_ASSUME: ${{ secrets.ROLE_TO_ASSUME }}
+      ROLE_TO_ASSUME: ${{ startsWith(secrets.ROLE_TO_ASSUME, 'arn:aws:iam::') && secrets.ROLE_TO_ASSUME || format('arn:aws:iam::{0}:role/{1}', secrets.AWS_ECR_ACCOUNT_ID, secrets.ROLE_TO_ASSUME) }}
