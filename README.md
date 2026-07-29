@@ -16,7 +16,7 @@ Navigate to quay.io/ukhomeofficedigital/html-pdf-converter to find latest the ta
 For example, if the latest tagged version is v3.1.0 then this command will need to be run:
 
 ```bash
-docker pull quay.io/ukhomeofficedigital/html-pdf-converter:v2.4.3 
+docker pull quay.io/ukhomeofficedigital/html-pdf-converter:v3.1.0 
 ```
 Once completed you can check the image is available locally by running: 
 ```bash 

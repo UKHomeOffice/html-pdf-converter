@@ -7,11 +7,16 @@ environment:
   IMAGE_REPO: html-pdf-converter
 # Update the VERSION to a new value for significant changes or releases
 # Follow semantic versioning (e.g., v3.0.1 for patches, v3.1.0 for minor changes, v4.0.0 for major changes)
-  VERSION: 3.0.0
+  VERSION: 3.1.0
+
+trigger:
+  branch:
+    include:
+    - master
 
 steps:
-  - name: install
-    image: node:24-slim
+  - name: setup
+    image: node:24.18.0-alpine3.24@sha256:4ba75f835bb8802193e4c114572113d4b26f95f6f094f4b5229d2a77773e0afc
     commands:
       - yarn install
     when:
@@ -21,7 +26,7 @@ steps:
       event: [ push, pull_request, tag ]
 
   - name: test
-    image: node:24-slim
+    image: node:24.18.0-alpine3.24@sha256:4ba75f835bb8802193e4c114572113d4b26f95f6f094f4b5229d2a77773e0afc
     commands:
       - yarn test
     when:
@@ -29,6 +34,8 @@ steps:
         include:
         - master
       event: [ push, pull_request, tag ]  
+    depends_on:
+      - setup
 
   - name: docker_build
     image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
@@ -44,6 +51,9 @@ steps:
         include:
         - master
       event: [ push, pull_request, tag ]
+    depends_on:
+      - setup
+      - test
 
   # Trivy Security Scannner
   - name: scan-base-image
@@ -54,9 +64,9 @@ steps:
         cpu: 1000
         memory: 1024Mi
     environment:
-      IMAGE_NAME: node:24-slim
+      IMAGE_NAME: node:24.18.0-alpine3.24@sha256:4ba75f835bb8802193e4c114572113d4b26f95f6f094f4b5229d2a77773e0afc
       SERVICE_URL: https://acp-trivy-helm.acp-trivy.svc.cluster.local:443 
-      TOLERATE: MEDIUM,HIGH,CRITICAL
+      SEVERITY: MEDIUM,HIGH,CRITICAL --vuln-type os,library
       FAIL_ON_DETECTION: false
       IGNORE_UNFIXED: true
       ALLOW_CVE_LIST_FILE: cve-exceptions.txt
@@ -68,6 +78,32 @@ steps:
         include:
         - master
       event: [ push, pull_request, tag ]
+
+  # Trivy Security Scannner
+  - name: scan-post-build-image
+    pull: always
+    image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/trivy/client:latest
+    resources:
+      limits:
+        cpu: 1000
+        memory: 1024Mi
+    environment:
+      IMAGE_NAME: html-pdf-converter:${DRONE_COMMIT_SHA}
+      SERVICE_URL: https://acp-trivy-helm.acp-trivy.svc.cluster.local:443 
+      SEVERITY: MEDIUM,HIGH,CRITICAL --vuln-type os,library
+      FAIL_ON_DETECTION: false
+      IGNORE_UNFIXED: true
+      ALLOW_CVE_LIST_FILE: cve-exceptions.txt
+    volumes:
+      - name: dockersock
+        path: /var/run
+    when:
+      branch:
+        include:
+        - master
+      event: [ push, pull_request, tag ]
+    depends_on:
+      - docker_build
 
   - name: docker_push
     image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
@@ -83,30 +119,8 @@ steps:
         include:
         - master
       event: [ push, pull_request, tag ]
-
-  # Trivy Security Scannner
-  - name: scan-packages
-    pull: always
-    image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/trivy/client:latest
-    resources:
-      limits:
-        cpu: 1000
-        memory: 1024Mi
-    environment:
-      IMAGE_NAME: html-pdf-converter:${DRONE_COMMIT_SHA}
-      SERVICE_URL: https://acp-trivy-helm.acp-trivy.svc.cluster.local:443 
-      TOLERATE: MEDIUM,HIGH,CRITICAL
-      FAIL_ON_DETECTION: false
-      IGNORE_UNFIXED: true
-      ALLOW_CVE_LIST_FILE: cve-exceptions.txt
-    volumes:
-      - name: dockersock
-        path: /var/run
-    when:
-      branch:
-        include:
-        - master
-      event: [ push, pull_request, tag ]
+    depends_on:
+      - scan-post-build-image
 
 services:
   - name: docker
