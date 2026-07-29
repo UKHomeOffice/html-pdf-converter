@@ -2,7 +2,6 @@
 
 [![Docker Repository on Quay](https://quay.io/repository/ukhomeofficedigital/html-pdf-converter/status "Docker Repository on Quay")](https://quay.io/repository/ukhomeofficedigital/html-pdf-converter)
 [![Build Status](https://drone.digital.homeoffice.gov.uk/api/badges/UKHomeOffice/html-pdf-converter/status.svg)](https://drone.digital.homeoffice.gov.uk/UKHomeOffice/html-pdf-converter)
-[![Build Status](https://travis-ci.org/UKHomeOffice/html-pdf-converter.svg?branch=master)](https://travis-ci.org/UKHomeOffice/html-pdf-converter)
 
 #### Uses Chrome Headless to convert HTML to a PDF
 
@@ -14,7 +13,7 @@ Send a HTML or Mustache template and receive a PDF stream as the response.
 
 Navigate to quay.io/ukhomeofficedigital/html-pdf-converter to find latest the tagged version. Docker will pull whichever version you specify.
 
-For example, if the latest tagged version v2.4.3 then this command will need to be run:
+For example, if the latest tagged version is v3.1.0 then this command will need to be run:
 
 ```bash
 docker pull quay.io/ukhomeofficedigital/html-pdf-converter:v2.4.3 
@@ -136,12 +135,15 @@ If your template includes links to any of these resources, we suggest you use [h
 ## Environment Variables
 
 ```bash
-APP_PORT:    Defaults to 8080
-APP_HOST:    Defaults to 'localhost'
+APP_PORT:         Defaults to 8080
+PORT:             Fallback if APP_PORT is not set
+APP_HOST:         Defaults to localhost
+LOG_LEVEL:        Optional application log level
+BODY_SIZE_LIMIT:  Defaults to 2mb
 ```
 
 ## Troubleshooting
 
-If you get the following error locally, `html-pdf-converter: Handling error message=Could not find browser revision 756035. Run "npm install" or "yarn install" to download a browser binary.`
+If you get a local Puppeteer browser error such as "Could not find browser" or a missing Chrome executable, reinstall dependencies to download a compatible browser binary.
 
-Then you may need to manually install puppeteer `npm i puppeteer`
+Then you may need to manually install Puppeteer with `npm i puppeteer`.
