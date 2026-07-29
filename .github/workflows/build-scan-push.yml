@@ -25,7 +25,7 @@ jobs:
       working_directory: "."
       dockerfile: "Dockerfile"
 
-      image_name: "html-pdf-converter"
+      image_name: "ukhomeofficedigital/html-pdf-converter"
 
       image_tag: "${{ github.event_name == 'pull_request' && format('pr-{0}-{1}', github.event.pull_request.number, github.event.pull_request.head.sha) || (startsWith(github.ref, 'refs/tags/') && github.ref_name) || github.sha }}"
 
