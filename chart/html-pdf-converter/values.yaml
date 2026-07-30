@@ -1,8 +1,8 @@
 replicaCount: 2
 
 image:
-  repository: quay.io/ukhomeofficedigital/html-pdf-converter
-  tag: latest
+  repository: 335721753278.dkr.ecr.eu-west-2.amazonaws.com/hof/html-pdf-converter
+  tag: pr-74-b00d9afa1be49936a5bd22db1243137082cf1262
   pullPolicy: IfNotPresent
 
 service:
