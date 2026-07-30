@@ -1,22 +1,24 @@
 # HTML PDF Converter
 
-[![Docker Repository on Quay](https://quay.io/repository/ukhomeofficedigital/html-pdf-converter/status "Docker Repository on Quay")](https://quay.io/repository/ukhomeofficedigital/html-pdf-converter)
-[![Build Status](https://drone.digital.homeoffice.gov.uk/api/badges/UKHomeOffice/html-pdf-converter/status.svg)](https://drone.digital.homeoffice.gov.uk/UKHomeOffice/html-pdf-converter)
-
 #### Uses Chrome Headless to convert HTML to a PDF
 
 Send a HTML or Mustache template and receive a PDF stream as the response.
+
+## Deployment
+
+Deployment is managed via Argo CD using the Helm chart in chart/html-pdf-converter.
+Image tags are produced by GitHub Actions and consumed by your Argo CD deployment workflow.
 
 ## Install and start
 
 ### Node App - Running a local html-pdf-instance in a docker container
 
-Navigate to quay.io/ukhomeofficedigital/html-pdf-converter to find latest the tagged version. Docker will pull whichever version you specify.
+Use the ECR image `<aws-account-id>.dkr.ecr.eu-west-2.amazonaws.com/hof/html-pdf-converter`. Docker will pull whichever tag you specify.
 
 For example, if the latest tagged version is v3.1.0 then this command will need to be run:
 
 ```bash
-docker pull quay.io/ukhomeofficedigital/html-pdf-converter:v3.1.0 
+docker pull <aws-account-id>.dkr.ecr.eu-west-2.amazonaws.com/hof/html-pdf-converter:v3.1.0
 ```
 Once completed you can check the image is available locally by running: 
 ```bash 
@@ -25,7 +27,7 @@ docker image list
 All HOF forms run locally on port 8080 and in some cases port 8081 may also be in use; so the html-pdf-converter should be run on another port. Currently port 8082 is recommended.
 
 ```bash
-docker run -t -i -p 8082:8080 quay.io/ukhomeofficedigital/html-pdf-converter:**<tag>**
+docker run -t -i -p 8082:8080 <aws-account-id>.dkr.ecr.eu-west-2.amazonaws.com/hof/html-pdf-converter:<tag>
 ```
 
 Observe following in terminal: 
