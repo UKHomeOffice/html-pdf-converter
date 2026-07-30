@@ -5,6 +5,7 @@ metadata:
   name: {{ include "html-pdf-converter.fullname" . }}
   labels:
     {{- include "html-pdf-converter.labels" . | nindent 4 }}
+    {{- include "html-pdf-converter.platformMandatoryLabels" . | nindent 4 }}
 
 spec:
   type: {{ .Values.service.type }}

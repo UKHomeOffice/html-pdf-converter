@@ -31,6 +31,22 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 
 
 {{/*
+Platform mandatory labels for Kyverno policies.
+*/}}
+{{- define "html-pdf-converter.platformMandatoryLabels" -}}
+cost-centre: {{ default "unset" .Values.platformLabels.costCentre | quote }}
+account-code: {{ default "unset" .Values.platformLabels.accountCode | quote }}
+portfolio-id: {{ default "unset" .Values.platformLabels.portfolioId | quote }}
+project-id: {{ default "unset" .Values.platformLabels.projectId | quote }}
+service-id: {{ default "unset" .Values.platformLabels.serviceId | quote }}
+owner-business: {{ default "unset" .Values.platformLabels.ownerBusiness | quote }}
+budget-holder: {{ default "unset" .Values.platformLabels.budgetHolder | quote }}
+environment-type: {{ default "unset" .Values.platformLabels.environmentType | quote }}
+source-repo: {{ default "https://github.com/UKHomeOffice/html-pdf-converter" .Values.platformLabels.sourceRepo | quote }}
+{{- end }}
+
+
+{{/*
 Chart label.
 */}}
 {{- define "html-pdf-converter.chart" -}}

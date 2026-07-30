@@ -4,6 +4,7 @@ metadata:
   name: {{ include "html-pdf-converter.fullname" . }}-config
   labels:
     {{- include "html-pdf-converter.labels" . | nindent 4 }}
+    {{- include "html-pdf-converter.platformMandatoryLabels" . | nindent 4 }}
 data:
   APP_PORT: {{ .Values.env.APP_PORT | quote }}
   APP_HOST: {{ .Values.env.APP_HOST | quote }}

@@ -5,6 +5,7 @@ metadata:
   name: {{ include "html-pdf-converter.fullname" . }}
   labels:
     {{- include "html-pdf-converter.labels" . | nindent 4 }}
+    {{- include "html-pdf-converter.platformMandatoryLabels" . | nindent 4 }}
 
 spec:
   replicas: {{ .Values.replicaCount }}
@@ -18,6 +19,7 @@ spec:
     metadata:
       labels:
         {{- include "html-pdf-converter.labels" . | nindent 8 }}
+        {{- include "html-pdf-converter.platformMandatoryLabels" . | nindent 8 }}
     spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
