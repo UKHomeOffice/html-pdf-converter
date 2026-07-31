@@ -169,3 +169,14 @@ describe('POSTing to /convert', () => {
     });
   });
 });
+
+describe('GETting /health', () => {
+  it('returns 200 JSON status response', () => {
+    return supertest(App)
+      .get('/health')
+      .expect('Content-type', /json/)
+      .expect(200, {
+        status: 'ok'
+      });
+  });
+});

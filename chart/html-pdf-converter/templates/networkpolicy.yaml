@@ -20,7 +20,7 @@ spec:
             matchLabels:
               {{ .Values.networkPolicy.namespaceSelector.labelKey }}: {{ default .Release.Namespace .Values.networkPolicy.namespaceSelector.labelValue | quote }}
       ports:
-        - port: {{ default 8080 .Values.containerPort }}
+        - port: {{ .Values.env.APP_PORT | default "8080" | int }}
           protocol: TCP
 {{- if .Values.nginxProxy.enabled }}
         - port: {{ default 8443 .Values.nginxProxy.containerPort }}

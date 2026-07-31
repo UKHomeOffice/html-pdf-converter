@@ -18,7 +18,8 @@ jobs:
       contents: read
       id-token: write
 
-    uses: Home-Office-Digital/core-cloud-workflow-docker-actions/.github/workflows/build-scan-push.yml@1.5.0
+    # Pinned to the commit behind tag 1.5.1 for supply-chain immutability.
+    uses: Home-Office-Digital/core-cloud-workflow-docker-actions/.github/workflows/build-scan-push.yml@a3ef4252eb4877ca410e9296d7c2fc381c7ae8bf
 
     with:
       working_directory: "."

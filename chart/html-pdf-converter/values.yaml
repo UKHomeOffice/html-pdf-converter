@@ -1,1 +1,17 @@
-# values injected dynamically based on each environment by hof deployment pipeline
+# Default values (overridden/injected per-environment by the deployment pipeline)
+replicaCount: 1
+image:
+  repository: "000000000000.dkr.ecr.eu-west-2.amazonaws.com/hof/html-pdf-converter"
+  tag: "v3.1.0"
+  pullPolicy: IfNotPresent
+service:
+  type: ClusterIP
+  port: 8080
+env:
+  APP_PORT: "8080"
+  APP_HOST: "localhost"
+  LOG_LEVEL: "info"
+  BODY_SIZE_LIMIT: "2mb"
+podSecurityContext: {}
+containerSecurityContext: {}
+resources: {}

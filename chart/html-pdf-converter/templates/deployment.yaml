@@ -39,7 +39,7 @@ spec:
 
           ports:
             - name: http
-              containerPort: {{ default 8080 .Values.containerPort }}
+              containerPort: {{ .Values.env.APP_PORT | default "8080" | int }}
               protocol: TCP
 
           startupProbe:
