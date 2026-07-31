@@ -10,9 +10,11 @@ Expand the name of the chart.
 Branch-aware workload name for ephemeral and stable environments.
 */}}
 {{- define "html-pdf-converter.workloadName" -}}
-{{- $base := default "html-pdf-converter" .Values.workload.baseName -}}
-{{- $branch := default "" .Values.workload.branchName -}}
-{{- if and .Values.workload.branchScoped $branch -}}
+{{- $workload := default (dict) .Values.workload -}}
+{{- $base := default "html-pdf-converter" (get $workload "baseName") -}}
+{{- $branch := default "" (get $workload "branchName") -}}
+{{- $branchScoped := default false (get $workload "branchScoped") -}}
+{{- if and $branchScoped $branch -}}
 {{- printf "%s-%s" $base $branch | trunc 63 | trimSuffix "-" -}}
 {{- else -}}
 {{- $base -}}
@@ -32,11 +34,16 @@ Deployment name.
 Replica count using environment defaults.
 */}}
 {{- define "html-pdf-converter.replicaCount" -}}
-{{- $env := lower (default "" .Values.workload.environment) -}}
+{{- $workload := default (dict) .Values.workload -}}
+{{- $replicas := default (dict) (get $workload "replicas") -}}
+{{- $env := lower (default "" (get $workload "environment")) -}}
+{{- $fallback := default 1 .Values.replicaCount -}}
+{{- $prodReplicas := default $fallback (get $replicas "prod") -}}
+{{- $defaultReplicas := default $fallback (get $replicas "default") -}}
 {{- if eq $env "prod" -}}
-{{ default 2 .Values.workload.replicas.prod }}
+{{ $prodReplicas }}
 {{- else -}}
-{{ default 1 .Values.workload.replicas.default }}
+{{ $defaultReplicas }}
 {{- end -}}
 {{- end }}
 
@@ -95,15 +102,16 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 Platform mandatory labels for Kyverno policies.
 */}}
 {{- define "html-pdf-converter.platformMandatoryLabels" -}}
-cost-centre: {{ default "unset" .Values.platformLabels.costCentre | quote }}
-account-code: {{ default "unset" .Values.platformLabels.accountCode | quote }}
-portfolio-id: {{ default "unset" .Values.platformLabels.portfolioId | quote }}
-project-id: {{ default "unset" .Values.platformLabels.projectId | quote }}
-service-id: {{ default "unset" .Values.platformLabels.serviceId | quote }}
-owner-business: {{ default "unset" .Values.platformLabels.ownerBusiness | quote }}
-budget-holder: {{ default "unset" .Values.platformLabels.budgetHolder | quote }}
-environment-type: {{ default "unset" .Values.platformLabels.environmentType | quote }}
-source-repo: {{ default "https://github.com/UKHomeOffice/html-pdf-converter" .Values.platformLabels.sourceRepo | quote }}
+{{- $platformLabels := default (dict) .Values.platformLabels -}}
+cost-centre: {{ default "unset" (get $platformLabels "costCentre") | quote }}
+account-code: {{ default "unset" (get $platformLabels "accountCode") | quote }}
+portfolio-id: {{ default "unset" (get $platformLabels "portfolioId") | quote }}
+project-id: {{ default "unset" (get $platformLabels "projectId") | quote }}
+service-id: {{ default "unset" (get $platformLabels "serviceId") | quote }}
+owner-business: {{ default "unset" (get $platformLabels "ownerBusiness") | quote }}
+budget-holder: {{ default "unset" (get $platformLabels "budgetHolder") | quote }}
+environment-type: {{ default "unset" (get $platformLabels "environmentType") | quote }}
+source-repo: {{ default "https://github.com/UKHomeOffice/html-pdf-converter" (get $platformLabels "sourceRepo") | quote }}
 {{- end }}
 
 

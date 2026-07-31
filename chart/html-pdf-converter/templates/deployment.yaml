@@ -26,6 +26,7 @@ spec:
       securityContext:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+      {{- $nginxProxy := default (dict) .Values.nginxProxy }}
       containers:
 
         - name: html-pdf-converter
@@ -67,21 +68,27 @@ spec:
             timeoutSeconds: 5
             failureThreshold: 3
 
-          envFrom:
-            - configMapRef:
-                name: {{ include "html-pdf-converter.fullname" . }}-config
+          env:
+            - name: APP_PORT
+              value: {{ .Values.env.APP_PORT | quote }}
+            - name: APP_HOST
+              value: {{ .Values.env.APP_HOST | quote }}
+            - name: LOG_LEVEL
+              value: {{ .Values.env.LOG_LEVEL | quote }}
+            - name: BODY_SIZE_LIMIT
+              value: {{ .Values.env.BODY_SIZE_LIMIT | quote }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
 
-        {{- if .Values.nginxProxy.enabled }}
+        {{- if (default false (get $nginxProxy "enabled")) }}
         - name: nginx-proxy
-          image: {{ .Values.nginxProxy.image | quote }}
-          imagePullPolicy: {{ default "IfNotPresent" .Values.nginxProxy.pullPolicy }}
+          image: {{ default "" (get $nginxProxy "image") | quote }}
+          imagePullPolicy: {{ default "IfNotPresent" (get $nginxProxy "pullPolicy") }}
           ports:
             - name: https
-              containerPort: {{ default 8443 .Values.nginxProxy.containerPort }}
+              containerPort: {{ default 8443 (get $nginxProxy "containerPort") }}
               protocol: TCP
           resources:
-            {{- toYaml .Values.nginxProxy.resources | nindent 12 }}
+            {{- toYaml (default (dict) (get $nginxProxy "resources")) | nindent 12 }}
         {{- end }}
           

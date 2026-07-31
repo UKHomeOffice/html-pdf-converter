@@ -1,4 +1,6 @@
-{{- if .Values.networkPolicy.enabled }}
+{{- $networkPolicy := default (dict) .Values.networkPolicy }}
+{{- $namespaceSelector := default (dict) (get $networkPolicy "namespaceSelector") }}
+{{- if (default false (get $networkPolicy "enabled")) }}
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 
@@ -9,6 +11,7 @@ metadata:
     {{- include "html-pdf-converter.platformMandatoryLabels" . | nindent 4 }}
 
 spec:
+  {{- $nginxProxy := default (dict) .Values.nginxProxy }}
   podSelector:
     matchLabels:
       name: {{ include "html-pdf-converter.workloadName" . }}
@@ -18,12 +21,12 @@ spec:
     - from:
         - namespaceSelector:
             matchLabels:
-              {{ .Values.networkPolicy.namespaceSelector.labelKey }}: {{ default .Release.Namespace .Values.networkPolicy.namespaceSelector.labelValue | quote }}
+                {{ default "name" (get $namespaceSelector "labelKey") }}: {{ default .Release.Namespace (get $namespaceSelector "labelValue") | quote }}
       ports:
         - port: {{ .Values.env.APP_PORT | default "8080" | int }}
           protocol: TCP
-{{- if .Values.nginxProxy.enabled }}
-        - port: {{ default 8443 .Values.nginxProxy.containerPort }}
+{{- if (default false (get $nginxProxy "enabled")) }}
+  - port: {{ default 8443 (get $nginxProxy "containerPort") }}
           protocol: TCP
 {{- end }}
 {{- end }}
