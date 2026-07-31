@@ -2,39 +2,44 @@ apiVersion: apps/v1
 kind: Deployment
 
 metadata:
-  name: {{ include "html-pdf-converter.fullname" . }}
+  name: {{ include "html-pdf-converter.deploymentName" . }}
   labels:
     {{- include "html-pdf-converter.labels" . | nindent 4 }}
+    {{- include "html-pdf-converter.selectorLabels" . | nindent 4 }}
     {{- include "html-pdf-converter.platformMandatoryLabels" . | nindent 4 }}
 
 spec:
-  replicas: {{ .Values.replicaCount }}
+  replicas: {{ include "html-pdf-converter.replicaCount" . | trim }}
 
   selector:
     matchLabels:
-      app.kubernetes.io/name: {{ include "html-pdf-converter.name" . }}
-      app.kubernetes.io/instance: {{ .Release.Name }}
+      {{- include "html-pdf-converter.selectorLabels" . | nindent 6 }}
 
   template:
     metadata:
       labels:
         {{- include "html-pdf-converter.labels" . | nindent 8 }}
+        {{- include "html-pdf-converter.selectorLabels" . | nindent 8 }}
         {{- include "html-pdf-converter.platformMandatoryLabels" . | nindent 8 }}
     spec:
+      {{- with .Values.podSecurityContext }}
       securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       containers:
 
         - name: html-pdf-converter
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          imagePullPolicy: {{ default "IfNotPresent" .Values.image.pullPolicy }}
 
+          {{- with .Values.containerSecurityContext }}
           securityContext:
-            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
 
           ports:
             - name: http
-              containerPort: 8080
+              containerPort: {{ default 8080 .Values.containerPort }}
               protocol: TCP
 
           startupProbe:
@@ -67,4 +72,16 @@ spec:
                 name: {{ include "html-pdf-converter.fullname" . }}-config
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+
+        {{- if .Values.nginxProxy.enabled }}
+        - name: nginx-proxy
+          image: {{ .Values.nginxProxy.image | quote }}
+          imagePullPolicy: {{ default "IfNotPresent" .Values.nginxProxy.pullPolicy }}
+          ports:
+            - name: https
+              containerPort: {{ default 8443 .Values.nginxProxy.containerPort }}
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.nginxProxy.resources | nindent 12 }}
+        {{- end }}
           

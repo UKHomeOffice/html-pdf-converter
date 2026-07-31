@@ -13,7 +13,7 @@ Image tags are produced by GitHub Actions and consumed by your Argo CD deploymen
 
 ### Node App - Running a local html-pdf-instance in a docker container
 
-Use the ECR image `<aws-account-id>.dkr.ecr.eu-west-2.amazonaws.com/hof/html-pdf-converter`. Docker will pull whichever tag you specify.
+Use the ECR image `<aws-account-id>.dkr.ecr.eu-west-2.amazonaws.com/hof/html-pdf-converter`. Docker will use Git tag that you specify.
 
 For example, if the latest tagged version is v3.1.0 then this command will need to be run:
 
@@ -143,6 +143,7 @@ APP_HOST:         Defaults to localhost
 LOG_LEVEL:        Optional application log level
 BODY_SIZE_LIMIT:  Defaults to 2mb
 ```
+If you get the following error locally, `html-pdf-converter: Handling error message=Could not find browser revision 756035. Run "npm install" or "yarn install" to download a browser binary.`
 
 ## Troubleshooting
 

@@ -7,6 +7,67 @@ Expand the name of the chart.
 
 
 {{/*
+Branch-aware workload name for ephemeral and stable environments.
+*/}}
+{{- define "html-pdf-converter.workloadName" -}}
+{{- $base := default "html-pdf-converter" .Values.workload.baseName -}}
+{{- $branch := default "" .Values.workload.branchName -}}
+{{- if and .Values.workload.branchScoped $branch -}}
+{{- printf "%s-%s" $base $branch | trunc 63 | trimSuffix "-" -}}
+{{- else -}}
+{{- $base -}}
+{{- end -}}
+{{- end }}
+
+
+{{/*
+Deployment name.
+*/}}
+{{- define "html-pdf-converter.deploymentName" -}}
+{{ include "html-pdf-converter.workloadName" . }}
+{{- end }}
+
+
+{{/*
+Replica count using environment defaults.
+*/}}
+{{- define "html-pdf-converter.replicaCount" -}}
+{{- $env := lower (default "" .Values.workload.environment) -}}
+{{- if eq $env "prod" -}}
+{{ default 2 .Values.workload.replicas.prod }}
+{{- else -}}
+{{ default 1 .Values.workload.replicas.default }}
+{{- end -}}
+{{- end }}
+
+
+{{/*
+Selectors/labels aligned with deployed workload name.
+*/}}
+{{- define "html-pdf-converter.selectorLabels" -}}
+name: {{ include "html-pdf-converter.workloadName" . }}
+service: {{ include "html-pdf-converter.workloadName" . }}
+{{- end }}
+
+
+{{/*
+Service labels.
+*/}}
+{{- define "html-pdf-converter.serviceLabels" -}}
+name: {{ include "html-pdf-converter.workloadName" . }}
+role: service
+{{- end }}
+
+
+{{/*
+Service selectors.
+*/}}
+{{- define "html-pdf-converter.serviceSelector" -}}
+name: {{ include "html-pdf-converter.workloadName" . }}
+{{- end }}
+
+
+{{/*
 Create a fully qualified app name.
 */}}
 {{- define "html-pdf-converter.fullname" -}}
