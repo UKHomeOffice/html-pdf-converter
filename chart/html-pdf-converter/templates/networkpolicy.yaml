@@ -11,7 +11,6 @@ metadata:
     {{- include "html-pdf-converter.platformMandatoryLabels" . | nindent 4 }}
 
 spec:
-  {{- $nginxProxy := default (dict) .Values.nginxProxy }}
   podSelector:
     matchLabels:
       name: {{ include "html-pdf-converter.workloadName" . }}
@@ -23,10 +22,8 @@ spec:
             matchLabels:
               {{ default "name" (get $namespaceSelector "labelKey") }}: {{ default .Release.Namespace (get $namespaceSelector "labelValue") | quote }}
       ports:
-        - port: {{ .Values.env.APP_PORT | default "8080" | int }}
+        - port: {{ default 10080 .Values.service.port }}
           protocol: TCP
-{{- if (default false (get $nginxProxy "enabled")) }}
-        - port: {{ default 8443 (get $nginxProxy "containerPort") }}
+        - port: {{ default 10443 .Values.service.httpsPort }}
           protocol: TCP
-{{- end }}
 {{- end }}

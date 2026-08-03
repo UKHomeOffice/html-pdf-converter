@@ -27,6 +27,7 @@ spec:
         {{- toYaml . | nindent 8 }}
       {{- end }}
       {{- $nginxProxy := default (dict) .Values.nginxProxy }}
+      {{- $nginxEnv := default (list) (get $nginxProxy "env") }}
       containers:
 
         - name: html-pdf-converter
@@ -80,15 +81,24 @@ spec:
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
 
-        {{- if (default false (get $nginxProxy "enabled")) }}
         - name: nginx-proxy
           image: {{ default "" (get $nginxProxy "image") | quote }}
           imagePullPolicy: {{ default "IfNotPresent" (get $nginxProxy "pullPolicy") }}
+          {{- with (get $nginxProxy "securityContext") }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           ports:
-            - name: https
-              containerPort: {{ default 8443 (get $nginxProxy "containerPort") }}
+            - name: nginx-http
+              containerPort: {{ default 10080 (get $nginxProxy "httpPort") }}
               protocol: TCP
+            - name: nginx-https
+              containerPort: {{ default 10443 (get $nginxProxy "httpsPort") }}
+              protocol: TCP
+          {{- if $nginxEnv }}
+          env:
+            {{- toYaml $nginxEnv | nindent 12 }}
+          {{- end }}
           resources:
             {{- toYaml (default (dict) (get $nginxProxy "resources")) | nindent 12 }}
-        {{- end }}
           

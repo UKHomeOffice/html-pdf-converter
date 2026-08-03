@@ -9,7 +9,6 @@ metadata:
 
 spec:
   type: {{ default "ClusterIP" .Values.service.type }}
-  {{- $nginxProxy := default (dict) .Values.nginxProxy }}
 
   selector:
     {{- include "html-pdf-converter.serviceSelector" . | nindent 4 }}
@@ -17,11 +16,9 @@ spec:
   ports:
     - name: http
       port: {{ default 10080 .Values.service.port }}
-      targetPort: http
+      targetPort: nginx-http
       protocol: TCP
-{{- if (default false (get $nginxProxy "enabled")) }}
     - name: https
       port: {{ default 10443 .Values.service.httpsPort }}
-      targetPort: https
+      targetPort: nginx-https
       protocol: TCP
-{{- end }}
