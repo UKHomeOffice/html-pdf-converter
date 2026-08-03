@@ -103,6 +103,8 @@ Platform mandatory labels for Kyverno policies.
 */}}
 {{- define "html-pdf-converter.platformMandatoryLabels" -}}
 {{- $platformLabels := default (dict) .Values.platformLabels -}}
+{{- $sourceRepoRaw := default "https://github.com/UKHomeOffice/html-pdf-converter" (get $platformLabels "sourceRepo") -}}
+{{- $sourceRepoLabel := $sourceRepoRaw | lower | replace "https://" "" | replace "http://" "" | replace "/" "-" | replace ":" "-" | replace " " "-" | trimAll "-" | trunc 63 -}}
 cost-centre: {{ default "unset" (get $platformLabels "costCentre") | quote }}
 account-code: {{ default "unset" (get $platformLabels "accountCode") | quote }}
 portfolio-id: {{ default "unset" (get $platformLabels "portfolioId") | quote }}
@@ -111,7 +113,7 @@ service-id: {{ default "unset" (get $platformLabels "serviceId") | quote }}
 owner-business: {{ default "unset" (get $platformLabels "ownerBusiness") | quote }}
 budget-holder: {{ default "unset" (get $platformLabels "budgetHolder") | quote }}
 environment-type: {{ default "unset" (get $platformLabels "environmentType") | quote }}
-source-repo: {{ default "https://github.com/UKHomeOffice/html-pdf-converter" (get $platformLabels "sourceRepo") | quote }}
+source-repo: {{ default "unset" $sourceRepoLabel | quote }}
 {{- end }}
 
 
