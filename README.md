@@ -6,8 +6,24 @@ Send a HTML or Mustache template and receive a PDF stream as the response.
 
 ## Deployment
 
-Deployment is managed via Argo CD using the Helm chart in chart/html-pdf-converter.
-Image tags are produced by GitHub Actions and consumed by your Argo CD deployment workflow.
+This repository owns the application code, Docker image build, and reusable Helm chart in `chart/html-pdf-converter`.
+
+Environment-specific deployment configuration lives in the `hof-deploy` repository, which is the GitOps source of truth for Argo CD. That includes values such as:
+
+- image tag or digest
+- namespace and environment settings
+- nginx sidecar values
+- resource requests and limits
+- network policy overrides
+
+### How deployment works
+
+1. Changes are merged to `main` in this repository.
+2. GitHub Actions builds and pushes the application image to ECR.
+3. The Argo CD `Application` in `hof-deploy` points at `main` for this chart and supplies environment values from `hof-deploy`.
+4. Argo CD renders the chart from this repository with the values from `hof-deploy` and applies the manifests to Kubernetes.
+
+In other words, changing chart templates here changes how the service is rendered, but changing deployment values in `hof-deploy` is what controls the environment rollout.
 
 ## Install and start
 

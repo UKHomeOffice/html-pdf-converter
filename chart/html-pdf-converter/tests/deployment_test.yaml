@@ -1,0 +1,35 @@
+suite: Deployment rendering
+templates:
+  - templates/deployment.yaml
+
+tests:
+  - it: should render the app image and mandatory nginx sidecar
+    set:
+      image.repository: test/html-pdf-converter
+      image.tag: 2.0.1
+      env.APP_PORT: "8001"
+      env.APP_HOST: 0.0.0.0
+      nginxProxy.image: test/nginx-proxy:1.0.0
+      nginxProxy.httpPort: 10080
+      nginxProxy.httpsPort: 10443
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: test/html-pdf-converter:2.0.1
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].containerPort
+          value: 8001
+      - equal:
+          path: spec.template.spec.containers[1].name
+          value: nginx-proxy
+      - equal:
+          path: spec.template.spec.containers[1].image
+          value: test/nginx-proxy:1.0.0
+      - equal:
+          path: spec.template.spec.containers[1].ports[0].containerPort
+          value: 10080
+      - equal:
+          path: spec.template.spec.containers[1].ports[1].containerPort
+          value: 10443
