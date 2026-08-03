@@ -21,12 +21,12 @@ spec:
     - from:
         - namespaceSelector:
             matchLabels:
-                {{ default "name" (get $namespaceSelector "labelKey") }}: {{ default .Release.Namespace (get $namespaceSelector "labelValue") | quote }}
+              {{ default "name" (get $namespaceSelector "labelKey") }}: {{ default .Release.Namespace (get $namespaceSelector "labelValue") | quote }}
       ports:
         - port: {{ .Values.env.APP_PORT | default "8080" | int }}
           protocol: TCP
 {{- if (default false (get $nginxProxy "enabled")) }}
-  - port: {{ default 8443 (get $nginxProxy "containerPort") }}
+        - port: {{ default 8443 (get $nginxProxy "containerPort") }}
           protocol: TCP
 {{- end }}
 {{- end }}
