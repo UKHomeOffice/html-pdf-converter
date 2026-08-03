@@ -1,4 +1,4 @@
-name: Building and scanning Docker images
+name: Building, Scanning and Pushing Docker Images
 
 on:
   pull_request:
