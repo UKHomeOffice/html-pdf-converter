@@ -1,0 +1,19 @@
+name: Validate Yarn Package
+
+on:
+    pull_request:
+        branches:
+            - main
+    push:
+        branches:
+            - main
+
+jobs:
+    validation:
+        uses: Home-Office-Digital/core-cloud-workflow-node-yarn-actions/.github/workflows/validation.yml@1.3.1
+        with:
+            working_directory: "."
+            node_version: "24.18.0"
+            audit_level: "high"
+            post_install_script: "yarn test:lint && yarn test:unit"
+        
