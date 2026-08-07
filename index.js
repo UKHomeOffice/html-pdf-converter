@@ -14,6 +14,12 @@ app.use(churchill(logger));
 
 app.use(bodyParser.json({ limit: config.limit }));
 
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'ok'
+  });
+});
+
 app.use('/convert', controller);
 app.use(errorHandler);
 app.listen(config.port, () => {

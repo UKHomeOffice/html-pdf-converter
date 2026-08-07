@@ -1,0 +1,29 @@
+{{- $networkPolicy := default (dict) .Values.networkPolicy }}
+{{- $namespaceSelector := default (dict) (get $networkPolicy "namespaceSelector") }}
+{{- if (default false (get $networkPolicy "enabled")) }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+
+metadata:
+  name: {{ printf "%s-allow-ingress" (include "html-pdf-converter.workloadName" .) | trunc 63 | trimSuffix "-" }}
+  labels:
+    {{- include "html-pdf-converter.labels" . | nindent 4 }}
+    {{- include "html-pdf-converter.platformMandatoryLabels" . | nindent 4 }}
+
+spec:
+  podSelector:
+    matchLabels:
+      name: {{ include "html-pdf-converter.workloadName" . }}
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              {{ default "name" (get $namespaceSelector "labelKey") }}: {{ default .Release.Namespace (get $namespaceSelector "labelValue") | quote }}
+      ports:
+        - port: {{ default 10080 .Values.service.port }}
+          protocol: TCP
+        - port: {{ default 10443 .Values.service.httpsPort }}
+          protocol: TCP
+{{- end }}

@@ -1,0 +1,24 @@
+suite: Service rendering
+templates:
+  - templates/service.yaml
+
+tests:
+  - it: should route service traffic through nginx sidecar ports
+    set:
+      service.port: 10080
+      service.httpsPort: 10443
+    asserts:
+      - isKind:
+          of: Service
+      - equal:
+          path: spec.ports[0].name
+          value: http
+      - equal:
+          path: spec.ports[0].targetPort
+          value: nginx-http
+      - equal:
+          path: spec.ports[1].name
+          value: https
+      - equal:
+          path: spec.ports[1].targetPort
+          value: nginx-https

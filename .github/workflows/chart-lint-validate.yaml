@@ -1,0 +1,44 @@
+name: Lint and validate Helm chart
+
+on:
+  pull_request:
+    branches:
+      - main
+      - CCL-*
+
+  push:
+    branches:
+      - main
+      - CCL-*
+
+  workflow_dispatch:
+    inputs:
+      chart_directory:
+        description: Path to Helm chart directory
+        required: false
+        default: chart/html-pdf-converter
+        type: string
+      helm_version:
+        description: Helm version (leave empty to use workflow default)
+        required: false
+        default: ""
+        type: string
+
+  workflow_call:
+    inputs:
+      chart_directory:
+        required: false
+        type: string
+        default: chart/html-pdf-converter
+      helm_version:
+        required: false
+        type: string
+        default: ""
+
+jobs:
+  validation:
+    uses: Home-Office-Digital/core-cloud-workflow-helm-ecr-actions/.github/workflows/validation.yml@1.0.0
+    with:
+      chart_directory: ${{ inputs.chart_directory || github.event.inputs.chart_directory || 'chart/html-pdf-converter' }}
+      helm_version: ${{ inputs.helm_version || github.event.inputs.helm_version || '' }}
+      run_unittest: true

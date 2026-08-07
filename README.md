@@ -1,23 +1,40 @@
 # HTML PDF Converter
 
-[![Docker Repository on Quay](https://quay.io/repository/ukhomeofficedigital/html-pdf-converter/status "Docker Repository on Quay")](https://quay.io/repository/ukhomeofficedigital/html-pdf-converter)
-[![Build Status](https://drone.digital.homeoffice.gov.uk/api/badges/UKHomeOffice/html-pdf-converter/status.svg)](https://drone.digital.homeoffice.gov.uk/UKHomeOffice/html-pdf-converter)
-[![Build Status](https://travis-ci.org/UKHomeOffice/html-pdf-converter.svg?branch=master)](https://travis-ci.org/UKHomeOffice/html-pdf-converter)
-
 #### Uses Chrome Headless to convert HTML to a PDF
 
 Send a HTML or Mustache template and receive a PDF stream as the response.
+
+## Deployment
+
+This repository owns the application code, Docker image build, and reusable Helm chart in `chart/html-pdf-converter`.
+
+Environment-specific deployment configuration lives in the `hof-deploy` repository, which is the GitOps source of truth for Argo CD. That includes values such as:
+
+- image tag or digest
+- namespace and environment settings
+- nginx sidecar values
+- resource requests and limits
+- network policy overrides
+
+### How deployment works
+
+1. Changes are merged to `main` in this repository.
+2. GitHub Actions builds and pushes the application image to ECR.
+3. The Argo CD `Application` in `hof-deploy` points at `main` for this chart and supplies environment values from `hof-deploy`.
+4. Argo CD renders the chart from this repository with the values from `hof-deploy` and applies the manifests to Kubernetes.
+
+In other words, changing chart templates here changes how the service is rendered, but changing deployment values in `hof-deploy` is what controls the environment rollout.
 
 ## Install and start
 
 ### Node App - Running a local html-pdf-instance in a docker container
 
-Navigate to quay.io/ukhomeofficedigital/html-pdf-converter to find latest the tagged version. Docker will pull whichever version you specify.
+Use the ECR image `<aws-account-id>.dkr.ecr.eu-west-2.amazonaws.com/hof/html-pdf-converter`. Docker will use Git tag that you specify.
 
-For example, if the latest tagged version v2.4.3 then this command will need to be run:
+For example, if the latest tagged version is v3.1.0 then this command will need to be run:
 
 ```bash
-docker pull quay.io/ukhomeofficedigital/html-pdf-converter:v3.1.0 
+docker pull <aws-account-id>.dkr.ecr.eu-west-2.amazonaws.com/hof/html-pdf-converter:v3.1.0
 ```
 Once completed you can check the image is available locally by running: 
 ```bash 
@@ -26,7 +43,7 @@ docker image list
 All HOF forms run locally on port 8080 and in some cases port 8081 may also be in use; so the html-pdf-converter should be run on another port. Currently port 8082 is recommended.
 
 ```bash
-docker run -t -i -p 8082:8080 quay.io/ukhomeofficedigital/html-pdf-converter:**<tag>**
+docker run -t -i -p 8082:8080 <aws-account-id>.dkr.ecr.eu-west-2.amazonaws.com/hof/html-pdf-converter:<tag>
 ```
 
 Observe following in terminal: 
@@ -136,12 +153,16 @@ If your template includes links to any of these resources, we suggest you use [h
 ## Environment Variables
 
 ```bash
-APP_PORT:    Defaults to 8080
-APP_HOST:    Defaults to 'localhost'
+APP_PORT:         Defaults to 8080
+PORT:             Fallback if APP_PORT is not set
+APP_HOST:         Defaults to localhost
+LOG_LEVEL:        Optional application log level
+BODY_SIZE_LIMIT:  Defaults to 2mb
 ```
+If you get the following error locally, `html-pdf-converter: Handling error message=Could not find browser revision 756035. Run "npm install" or "yarn install" to download a browser binary.`
 
 ## Troubleshooting
 
-If you get the following error locally, `html-pdf-converter: Handling error message=Could not find browser revision 756035. Run "npm install" or "yarn install" to download a browser binary.`
+If you get a local Puppeteer browser error such as "Could not find browser" or a missing Chrome executable, reinstall dependencies to download a compatible browser binary.
 
-Then you may need to manually install puppeteer `npm i puppeteer`
+Then you may need to manually install Puppeteer with `npm i puppeteer`.

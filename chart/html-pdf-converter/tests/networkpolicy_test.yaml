@@ -1,0 +1,26 @@
+suite: NetworkPolicy rendering
+templates:
+  - templates/networkpolicy.yaml
+
+tests:
+  - it: should render ingress rules for both nginx ports when enabled
+    set:
+      networkPolicy.enabled: true
+      service.port: 10080
+      service.httpsPort: 10443
+      networkPolicy.namespaceSelector.labelKey: kubernetes.io/metadata.name
+      networkPolicy.namespaceSelector.labelValue: html-pdf-converter
+    release:
+      namespace: html-pdf-converter
+    asserts:
+      - isKind:
+          of: NetworkPolicy
+      - equal:
+          path: spec.ingress[0].from[0].namespaceSelector.matchLabels["kubernetes.io/metadata.name"]
+          value: html-pdf-converter
+      - equal:
+          path: spec.ingress[0].ports[0].port
+          value: 10080
+      - equal:
+          path: spec.ingress[0].ports[1].port
+          value: 10443

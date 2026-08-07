@@ -1,0 +1,104 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: {{ include "html-pdf-converter.deploymentName" . }}
+  labels:
+    {{- include "html-pdf-converter.labels" . | nindent 4 }}
+    {{- include "html-pdf-converter.selectorLabels" . | nindent 4 }}
+    {{- include "html-pdf-converter.platformMandatoryLabels" . | nindent 4 }}
+
+spec:
+  replicas: {{ include "html-pdf-converter.replicaCount" . | trim }}
+
+  selector:
+    matchLabels:
+      {{- include "html-pdf-converter.selectorLabels" . | nindent 6 }}
+
+  template:
+    metadata:
+      labels:
+        {{- include "html-pdf-converter.labels" . | nindent 8 }}
+        {{- include "html-pdf-converter.selectorLabels" . | nindent 8 }}
+        {{- include "html-pdf-converter.platformMandatoryLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- $nginxProxy := default (dict) .Values.nginxProxy }}
+      {{- $nginxEnv := default (list) (get $nginxProxy "env") }}
+      containers:
+
+        - name: html-pdf-converter
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ default "IfNotPresent" .Values.image.pullPolicy }}
+
+          {{- with .Values.containerSecurityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+          ports:
+            - name: http
+              containerPort: {{ .Values.env.APP_PORT | default "8080" | int }}
+              protocol: TCP
+
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            failureThreshold: 30
+            periodSeconds: 5
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            timeoutSeconds: 5
+            failureThreshold: 3
+
+          env:
+            - name: APP_PORT
+              value: {{ .Values.env.APP_PORT | quote }}
+            - name: APP_HOST
+              value: {{ .Values.env.APP_HOST | quote }}
+            - name: LOG_LEVEL
+              value: {{ .Values.env.LOG_LEVEL | quote }}
+            - name: BODY_SIZE_LIMIT
+              value: {{ .Values.env.BODY_SIZE_LIMIT | quote }}
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+
+        - name: nginx-proxy
+          image: {{ default "" (get $nginxProxy "image") | quote }}
+          imagePullPolicy: {{ default "IfNotPresent" (get $nginxProxy "pullPolicy") }}
+          {{- with (get $nginxProxy "securityContext") }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - name: nginx-http
+              containerPort: {{ default 10080 (get $nginxProxy "httpPort") }}
+              protocol: TCP
+            - name: nginx-https
+              containerPort: {{ default 10443 (get $nginxProxy "httpsPort") }}
+              protocol: TCP
+          {{- if $nginxEnv }}
+          env:
+            {{- toYaml $nginxEnv | nindent 12 }}
+          {{- end }}
+          resources:
+            {{- toYaml (default (dict) (get $nginxProxy "resources")) | nindent 12 }}
+          
