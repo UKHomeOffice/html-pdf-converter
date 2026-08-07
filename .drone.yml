@@ -72,6 +72,8 @@ steps:
     when:
       branch: master
       event: [push, pull_request, tag]
+    depends_on:
+      - setup
 
   - name: test
     image: quay.io/ukhomeofficedigital/hof-nodejs:24.19.0-alpine3.24@sha256:a70b2f29d55a9aebcf89690e7f64f4889725dab87a3b22663d102ca17c5f888e
@@ -98,13 +100,13 @@ steps:
       branch:
         include:
         - master
-      event: [ push, pull_request, tag ]
+      event: [ push, pull_request, tag]
     depends_on:
       - setup
       - test
 
   # Trivy Security Scannner
-  - name: scan-post-build-image
+  - name: scan-final-image
     pull: always
     image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/trivy/client:latest
     resources:
@@ -142,9 +144,9 @@ steps:
       branch:
         include:
         - master
-      event: [ push, pull_request, tag ]
+      event: [ push, pull_request]
     depends_on:
-      - scan-post-build-image
+      - scan-final-image
 
 # Automatically push Docker image to Quay when a Git tag is created on the master branch, Users should reference the image using the format: image_repo_url:tag@digestsha for immutability and traceability.
   - name: push_tag_to_quay
@@ -160,6 +162,8 @@ steps:
     when:
       branch: master
       event: [tag]
+    depends_on:
+      - scan-final-image
 
   # CRON job steps that runs security scans using Snyk & Anchore
   - name: cron_clone_repos
