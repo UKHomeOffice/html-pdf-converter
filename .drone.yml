@@ -68,7 +68,7 @@ steps:
   - name: linting
     <<: *node_image
     commands:
-      - yarn run test:lint
+      - yarn run lint
     when:
       branch: master
       event: [push, pull_request, tag]
