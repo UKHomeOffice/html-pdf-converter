@@ -13,24 +13,42 @@ on:
       - "[0-9]+.[0-9]+.[0-9]+"
 
 jobs:
-  build-scan:
+  build-scan-hofnotprod:
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     permissions:
       contents: read
       id-token: write
 
-    # Pinned to the commit behind tag 1.5.1 for supply-chain immutability.
     uses: Home-Office-Digital/core-cloud-workflow-docker-actions/.github/workflows/build-scan-push.yml@a3ef4252eb4877ca410e9296d7c2fc381c7ae8bf
 
     with:
       working_directory: "."
       dockerfile: "Dockerfile"
-
       image_name: "hof/html-pdf-converter"
-
       image_tag: "${{ github.event_name == 'pull_request' && format('pr-{0}-{1}', github.event.pull_request.number, github.event.pull_request.head.sha) || (startsWith(github.ref, 'refs/tags/') && github.ref_name) || github.sha }}"
-
-      tag_latest: ${{ github.ref == 'refs/heads/main' }}
+      tag_latest: ${{ github.event_name != 'pull_request' }}
 
     secrets:
-      AWS_ECR_ACCOUNT_ID: ${{ secrets.AWS_ECR_ACCOUNT_ID }}
-      ROLE_TO_ASSUME: ${{ startsWith(secrets.ROLE_TO_ASSUME, 'arn:aws:iam::') && secrets.ROLE_TO_ASSUME || format('arn:aws:iam::{0}:role/{1}', secrets.AWS_ECR_ACCOUNT_ID, secrets.ROLE_TO_ASSUME) }}
+      AWS_ECR_ACCOUNT_ID: ${{ secrets.HOFNOTPROD_AWS_ECR_ACCOUNT_ID }}
+      ROLE_TO_ASSUME: ${{ secrets.HOFNOTPROD_ROLE_TO_ASSUME }}
+      EXEMPTIONS_APP_ID: ${{ secrets.EXEMPTIONS_APP_ID }}
+      EXEMPTIONS_APP_PRIVATE_KEY: ${{ secrets.EXEMPTIONS_APP_PRIVATE_KEY }}
+
+  build-scan-hofprod:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: read
+      id-token: write
+
+    uses: Home-Office-Digital/core-cloud-workflow-docker-actions/.github/workflows/build-scan-push.yml@a3ef4252eb4877ca410e9296d7c2fc381c7ae8bf
+
+    with:
+      working_directory: "."
+      dockerfile: "Dockerfile"
+      image_name: "hof/html-pdf-converter"
+      image_tag: "${{ github.ref_name }}"
+      tag_latest: false
+
+    secrets:
+      AWS_ECR_ACCOUNT_ID: ${{ secrets.HOFPROD_AWS_ECR_ACCOUNT_ID }}
+      ROLE_TO_ASSUME: ${{ secrets.HOFPROD_ROLE_TO_ASSUME }}
