@@ -22,9 +22,10 @@ describe('POSTing to /convert', () => {
   let setContentStub;
 
   beforeEach(() => {
+    Converter.engine = 'puppeteer';
     pdfStub = sinon.stub().resolves(result);
     setContentStub = sinon.stub().resolves();
-    const clientStub = {
+    const contextStub = {
       close: sinon.stub().resolves(),
       newPage: sinon.stub().resolves({
         close: sinon.stub().resolves(),
@@ -32,12 +33,17 @@ describe('POSTing to /convert', () => {
         pdf: pdfStub
       })
     };
+    const clientStub = {
+      close: sinon.stub().resolves(),
+      createBrowserContext: sinon.stub().resolves(contextStub)
+    };
     sinon.stub(puppeteer, 'launch').resolves(clientStub);
     sinon.spy(mustache, 'render');
   });
 
   afterEach(async () => {
     await Converter.close();
+    Converter.engine = null;
     if (createStub) {
       createStub.restore();
       createStub = null;

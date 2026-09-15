@@ -44,7 +44,7 @@ Timing points:
 - page creation time
 - `page.setContent()` time
 - `page.pdf()` time
-- page close time
+- page/context close time
 - queue wait time
 - active conversion count
 - queued conversion count
@@ -164,7 +164,7 @@ These numbers show that local sequential requests are currently around `760ms` a
 
 ## Post Browser Reuse Baseline
 
-Captured on 2026-09-15 after refactoring `models/converter.js` to reuse a shared Chromium instance and close only the page after each conversion.
+Captured on 2026-09-15 after refactoring `models/converter.js` to reuse a shared Chromium instance and close request-owned page/context resources after each conversion.
 
 The converter service was started with the same command used for the original local baseline:
 
@@ -275,16 +275,133 @@ yarn benchmark --url http://localhost:18080/convert --requests 30 --concurrency 
 
 This run confirms that queued conversions complete successfully under client concurrency higher than the configured active PDF conversion limit.
 
+## Local PDF_CONCURRENCY Sweep
+
+Captured on 2026-09-15 using `PDF_ENGINE=puppeteer`, `30` requests, client concurrency `5`, and the same benchmark fixture.
+
+Each candidate was run against a fresh service process on port `18082`.
+
+```bash
+APP_PORT=18082 PDF_ENGINE=puppeteer PDF_CONCURRENCY=<candidate> LOG_LEVEL=silent yarn start
+yarn benchmark --url http://localhost:18082/convert --requests 30 --concurrency 5
+```
+
+| PDF_CONCURRENCY | Avg | P50 | P95 | P99 | Throughput | Status |
+| ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| `1` | `1074.34ms` | `1144.63ms` | `1184.42ms` | `1190.51ms` | `4.35 req/s` | 30 x `201` |
+| `2` | `894.95ms` | `874.5ms` | `1292.6ms` | `1308.67ms` | `5.32 req/s` | 30 x `201` |
+| `3` | `829.09ms` | `817.21ms` | `1124.25ms` | `1228.37ms` | `5.86 req/s` | 30 x `201` |
+| `4` | `787.33ms` | `753.46ms` | `1115.88ms` | `1202.67ms` | `6.17 req/s` | 30 x `201` |
+
+This local sweep shows throughput improving up to `PDF_CONCURRENCY=4`, with p95 latency flattening around `3-4`. The default remains `2` until the same sweep is run inside the production-like Docker/container resource limits and memory usage is captured.
+
+## PDF Engine Comparison Plan
+
+Puppeteer remains the default PDF engine. Playwright is available as an optional engine for comparison benchmarking:
+
+```bash
+PDF_ENGINE=puppeteer
+PDF_ENGINE=playwright
+```
+
+Both engines use Chromium and preserve the same `/convert` API behavior. The benchmark comparison should use the same service settings, fixture, and request counts for both engines.
+
+Suggested local comparison:
+
+```bash
+APP_PORT=18080 PDF_ENGINE=puppeteer LOG_LEVEL=silent yarn start
+yarn benchmark --url http://localhost:18080/convert --requests 30 --concurrency 5
+
+APP_PORT=18080 PDF_ENGINE=playwright LOG_LEVEL=silent yarn start
+yarn benchmark --url http://localhost:18080/convert --requests 30 --concurrency 5
+```
+
+Record the results here before changing the default engine. Compare average latency, p95, p99, throughput, memory usage, error rate, and generated PDF compatibility for representative forms.
+
+### Initial Playwright Smoke Run
+
+Captured on 2026-09-15 with `PDF_ENGINE=playwright` to verify the alternative engine can render successful PDFs locally.
+
+```bash
+APP_PORT=18080 PDF_ENGINE=playwright LOG_LEVEL=silent yarn start
+yarn benchmark --url http://localhost:18080/convert --requests 3 --concurrency 1
+```
+
+```json
+{
+  "durationSeconds": 0.69,
+  "requestsPerSecond": 4.35,
+  "latencyMs": {
+    "requests": 3,
+    "failures": 0,
+    "min": 223.29,
+    "max": 240.29,
+    "avg": 229.74,
+    "p50": 225.63,
+    "p95": 240.29,
+    "p99": 240.29
+  },
+  "statuses": {
+    "201": 3
+  }
+}
+```
+
+This smoke run confirms the Playwright path is functional. It is not yet a full performance comparison against Puppeteer because the request count is intentionally small.
+
+### Puppeteer Vs Playwright Comparison
+
+Captured on 2026-09-15 using the same benchmark fixture, port, request counts, and client concurrency settings for both engines.
+
+The benchmark port `18081` was checked before the run. An older listener was cleared before starting the Playwright service so each engine was measured against a fresh process.
+
+#### Puppeteer
+
+```bash
+APP_PORT=18081 PDF_ENGINE=puppeteer LOG_LEVEL=silent yarn start
+yarn benchmark --url http://localhost:18081/convert --requests 30 --concurrency 1
+yarn benchmark --url http://localhost:18081/convert --requests 30 --concurrency 5
+```
+
+| Scenario | Avg | P50 | P95 | P99 | Throughput | Status |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| 30 requests, concurrency 1 | `161.16ms` | `146.44ms` | `295.11ms` | `352.69ms` | `6.2 req/s` | 30 x `201` |
+| 30 requests, concurrency 5 | `508.37ms` | `498.09ms` | `640ms` | `657.96ms` | `9.37 req/s` | 30 x `201` |
+
+#### Playwright
+
+```bash
+APP_PORT=18081 PDF_ENGINE=playwright LOG_LEVEL=silent yarn start
+yarn benchmark --url http://localhost:18081/convert --requests 30 --concurrency 1
+yarn benchmark --url http://localhost:18081/convert --requests 30 --concurrency 5
+```
+
+| Scenario | Avg | P50 | P95 | P99 | Throughput | Status |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| 30 requests, concurrency 1 | `234.42ms` | `232.01ms` | `247.28ms` | `249.33ms` | `4.27 req/s` | 30 x `201` |
+| 30 requests, concurrency 5 | `773.1ms` | `779.27ms` | `884.27ms` | `946.89ms` | `6.12 req/s` | 30 x `201` |
+
+#### Comparison Summary
+
+| Scenario | Faster Engine | Avg Difference | P95 Difference | Throughput Difference |
+| --- | --- | ---: | ---: | ---: |
+| 30 requests, concurrency 1 | Puppeteer | `73.26ms faster` | Playwright was `47.83ms faster` at p95 | Puppeteer `6.2 req/s` vs Playwright `4.27 req/s` |
+| 30 requests, concurrency 5 | Puppeteer | `264.73ms faster` | `244.27ms faster` | Puppeteer `9.37 req/s` vs Playwright `6.12 req/s` |
+
+For this fixture, Puppeteer is more efficient overall. Playwright produced successful PDFs, but it had lower throughput and higher average latency in both measured scenarios. The only Playwright advantage in this run was lower p95 latency in the sequential scenario, while its average and throughput were still worse.
+
+The total response byte count differed between engines for the same request count, so Playwright should not become the default without visual or content compatibility checks against representative real forms.
+
 ## Optimization Plan
 
 ### 1. Reuse Chromium
 
 Refactor the converter so the service launches Chromium once per process instead of once per request.
 
-Expected behavior:
+Implemented behavior:
 
-- lazily launch the browser on first conversion, or launch during app startup
-- create a fresh page or isolated browser context per request
+- lazily launch the browser on first conversion
+- create a fresh page or isolated browser context per request, depending on engine support
 - always close the page or context after each request
 - keep the browser alive across requests
 - close the browser on process shutdown

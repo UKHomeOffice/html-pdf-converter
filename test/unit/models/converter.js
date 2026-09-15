@@ -3,6 +3,7 @@
 const assert = require('assert');
 const sinon = require('sinon');
 const puppeteer = require('puppeteer');
+const { chromium } = require('playwright-core');
 const Converter = require('../../../models/converter');
 
 const deferred = () => {
@@ -26,16 +27,24 @@ describe('models/converter', () => {
   const html = '<p>Hello</p>';
   const result = Buffer.from('pdf');
   let browser;
+  let context;
   let page;
 
   beforeEach(() => {
+    process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH = '/usr/bin/chromium-browser';
+    Converter.engine = 'puppeteer';
     page = {
       close: sinon.stub().resolves(),
       setContent: sinon.stub().resolves(),
       pdf: sinon.stub().resolves(result)
     };
+    context = {
+      close: sinon.stub().resolves(),
+      newPage: sinon.stub().resolves(page)
+    };
     browser = {
       close: sinon.stub().resolves(),
+      createBrowserContext: sinon.stub().resolves(context),
       newPage: sinon.stub().resolves(page),
       on: sinon.stub()
     };
@@ -45,9 +54,14 @@ describe('models/converter', () => {
   afterEach(async () => {
     await Converter.close();
     Converter.concurrency = null;
+    Converter.engine = null;
     Converter.queueSize = null;
     Converter.timeoutMs = null;
+    delete process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
     puppeteer.launch.restore();
+    if (chromium.launch.restore) {
+      chromium.launch.restore();
+    }
   });
 
   it('launches Chromium once across multiple conversions', async () => {
@@ -57,16 +71,18 @@ describe('models/converter', () => {
     await converter.create(html);
 
     assert.equal(puppeteer.launch.callCount, 1);
-    assert.equal(browser.newPage.callCount, 2);
+    assert.equal(browser.createBrowserContext.callCount, 2);
+    assert.equal(context.newPage.callCount, 2);
   });
 
-  it('closes the page after a successful conversion without closing the browser', async () => {
+  it('closes the page and context after a successful conversion without closing the browser', async () => {
     const converter = new Converter();
 
     const data = await converter.create(html);
 
     assert.deepEqual(data, result);
     assert(page.close.calledOnce);
+    assert(context.close.calledOnce);
     assert(browser.close.notCalled);
   });
 
@@ -100,6 +116,17 @@ describe('models/converter', () => {
     await assert.rejects(() => converter.create(html), error);
 
     assert(page.close.calledOnce);
+    assert(context.close.calledOnce);
+  });
+
+  it('returns a safe error when the PDF engine is unavailable', async () => {
+    const converter = new Converter();
+    puppeteer.launch.rejects(new Error('spawn failed'));
+
+    await assert.rejects(
+      () => converter.create(html),
+      error => error.code === 'PdfEngineUnavailable' && error.status === 503
+    );
   });
 
   it('relaunches Chromium after the browser disconnects', async () => {
@@ -121,8 +148,14 @@ describe('models/converter', () => {
     const firstPdf = deferred();
     const firstPage = createPage(firstPdf.promise);
     const secondPage = createPage(Promise.resolve(result));
-    browser.newPage.onFirstCall().resolves(firstPage);
-    browser.newPage.onSecondCall().resolves(secondPage);
+    browser.createBrowserContext.onFirstCall().resolves({
+      close: sinon.stub().resolves(),
+      newPage: sinon.stub().resolves(firstPage)
+    });
+    browser.createBrowserContext.onSecondCall().resolves({
+      close: sinon.stub().resolves(),
+      newPage: sinon.stub().resolves(secondPage)
+    });
 
     const converter = new Converter();
     const firstConversion = converter.create(html);
@@ -130,13 +163,13 @@ describe('models/converter', () => {
 
     await waitForQueue();
 
-    assert.equal(browser.newPage.callCount, 1);
+    assert.equal(browser.createBrowserContext.callCount, 1);
 
     firstPdf.resolve(result);
     await firstConversion;
     await secondConversion;
 
-    assert.equal(browser.newPage.callCount, 2);
+    assert.equal(browser.createBrowserContext.callCount, 2);
     assert(firstPage.close.calledOnce);
     assert(secondPage.close.calledOnce);
   });
@@ -145,7 +178,10 @@ describe('models/converter', () => {
     Converter.concurrency = 1;
     Converter.queueSize = 1;
     const firstPdf = deferred();
-    browser.newPage.onFirstCall().resolves(createPage(firstPdf.promise));
+    browser.createBrowserContext.onFirstCall().resolves({
+      close: sinon.stub().resolves(),
+      newPage: sinon.stub().resolves(createPage(firstPdf.promise))
+    });
 
     const converter = new Converter();
     const firstConversion = converter.create(html);
@@ -167,8 +203,14 @@ describe('models/converter', () => {
     Converter.concurrency = 1;
     Converter.queueSize = 1;
     const firstPdf = deferred();
-    browser.newPage.onFirstCall().resolves(createPage(firstPdf.promise));
-    browser.newPage.onSecondCall().resolves(createPage(Promise.resolve(result)));
+    browser.createBrowserContext.onFirstCall().resolves({
+      close: sinon.stub().resolves(),
+      newPage: sinon.stub().resolves(createPage(firstPdf.promise))
+    });
+    browser.createBrowserContext.onSecondCall().resolves({
+      close: sinon.stub().resolves(),
+      newPage: sinon.stub().resolves(createPage(Promise.resolve(result)))
+    });
     const abortController = new AbortController();
 
     const converter = new Converter();
@@ -185,14 +227,17 @@ describe('models/converter', () => {
     await firstConversion;
     await replacementConversion;
 
-    assert.equal(browser.newPage.callCount, 2);
+    assert.equal(browser.createBrowserContext.callCount, 2);
   });
 
   it('closes the running page when the client aborts', async () => {
     const pdf = deferred();
     const runningPage = createPage(pdf.promise);
     const abortController = new AbortController();
-    browser.newPage.resolves(runningPage);
+    browser.createBrowserContext.resolves({
+      close: sinon.stub().resolves(),
+      newPage: sinon.stub().resolves(runningPage)
+    });
 
     const converter = new Converter();
     const conversion = converter.create(html, null, { signal: abortController.signal });
@@ -210,7 +255,10 @@ describe('models/converter', () => {
     const clock = sinon.useFakeTimers();
     const pdf = deferred();
     const runningPage = createPage(pdf.promise);
-    browser.newPage.resolves(runningPage);
+    browser.createBrowserContext.resolves({
+      close: sinon.stub().resolves(),
+      newPage: sinon.stub().resolves(runningPage)
+    });
 
     const converter = new Converter();
     const conversion = converter.create(html);
@@ -222,5 +270,31 @@ describe('models/converter', () => {
     await timedOut;
     assert(runningPage.close.calledOnce);
     clock.restore();
+  });
+
+  it('can use Playwright as a configured PDF engine', async () => {
+    Converter.engine = 'playwright';
+    const playwrightContext = {
+      close: sinon.stub().resolves(),
+      newPage: sinon.stub().resolves(page)
+    };
+    const playwrightBrowser = {
+      close: sinon.stub().resolves(),
+      newContext: sinon.stub().resolves(playwrightContext),
+      on: sinon.stub()
+    };
+    sinon.stub(chromium, 'launch').resolves(playwrightBrowser);
+
+    const converter = new Converter();
+    const data = await converter.create(html);
+
+    assert.deepEqual(data, result);
+    assert(puppeteer.launch.notCalled);
+    assert(chromium.launch.calledOnce);
+    assert(playwrightContext.newPage.calledOnce);
+    assert(page.setContent.calledWith(html, { waitUntil: 'load' }));
+    assert(page.pdf.calledWith({ format: 'A4' }));
+    assert(page.close.calledOnce);
+    assert(playwrightContext.close.calledOnce);
   });
 });

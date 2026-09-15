@@ -1,7 +1,10 @@
 'use strict';
 
 const config = require('../config');
-const puppeteer = require('puppeteer');
+const pdfEngines = {
+  playwright: require('./pdf-engines/playwright'),
+  puppeteer: require('./pdf-engines/puppeteer')
+};
 
 const launchOptions = {
   args: [
@@ -25,12 +28,33 @@ const createError = (code, message, status) => {
   return error;
 };
 
+const browserUnavailable = error => {
+  if (error.code) {
+    return error;
+  }
+
+  return createError('PdfEngineUnavailable', 'PDF engine is unavailable', 503);
+};
+
 const now = () => Date.now();
 
 module.exports = class PDFConverterModel {
+  static getEngineName() {
+    return this.engine || config.pdfEngine;
+  }
+
+  static getEngine() {
+    const engine = pdfEngines[this.getEngineName()];
+    if (!engine) {
+      throw createError('InvalidPdfEngine', 'Unsupported PDF engine configured', 500);
+    }
+    return engine;
+  }
+
   static getBrowser() {
     if (!this.browserPromise) {
-      this.browserPromise = puppeteer.launch(launchOptions)
+      this.engineAdapter = this.getEngine();
+      this.browserPromise = this.engineAdapter.launch(launchOptions)
         .then(browser => {
           this.browser = browser;
           if (typeof browser.on === 'function') {
@@ -46,7 +70,7 @@ module.exports = class PDFConverterModel {
         .catch(error => {
           this.browser = null;
           this.browserPromise = null;
-          throw error;
+          throw browserUnavailable(error);
         });
     }
 
@@ -57,6 +81,7 @@ module.exports = class PDFConverterModel {
     const browser = this.browser;
     this.browser = null;
     this.browserPromise = null;
+    this.engineAdapter = null;
     this.activeCount = 0;
     this.queue = [];
 
@@ -242,13 +267,14 @@ module.exports = class PDFConverterModel {
     };
 
     return this.constructor.queueConversion(async task => {
+      let engine;
       let page;
       let pageClosed = false;
       const closePage = async () => {
         if (page && !pageClosed) {
           pageClosed = true;
           const closeStarted = now();
-          await page.close();
+          await engine.closePage(page);
           timings.pageCloseMs = now() - closeStarted;
         }
       };
@@ -257,23 +283,24 @@ module.exports = class PDFConverterModel {
       task.throwIfAborted();
 
       try {
+        engine = this.constructor.engineAdapter || this.constructor.getEngine();
         const browserStarted = now();
         const browser = await this.constructor.getBrowser();
         timings.browserAcquireMs = now() - browserStarted;
         task.throwIfAborted();
 
         const pageStarted = now();
-        page = await browser.newPage();
+        page = await engine.newPage(browser);
         timings.pageCreateMs = now() - pageStarted;
         task.throwIfAborted();
 
         const contentStarted = now();
-        await page.setContent(html, { waitUntil });
+        await (page.page || page).setContent(html, { waitUntil });
         timings.setContentMs = now() - contentStarted;
         task.throwIfAborted();
 
         const pdfStarted = now();
-        const data = await page.pdf(optionsWithDefaults);
+        const data = await (page.page || page).pdf(optionsWithDefaults);
         timings.pdfMs = now() - pdfStarted;
         return Buffer.from(data, 'base64');
       } finally {

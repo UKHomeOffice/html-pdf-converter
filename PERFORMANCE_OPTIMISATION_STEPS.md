@@ -61,7 +61,7 @@ Added focused tests in `test/unit/models/converter.js` for the PDF converter lif
 The tests cover:
 
 - Chromium launches once across multiple conversions.
-- A new page is created per conversion.
+- A new browser context and page are created per conversion where the selected engine supports contexts.
 - The page closes after successful PDF generation.
 - The page closes when PDF generation fails.
 - Active conversions are limited by the configured concurrency.
@@ -69,6 +69,8 @@ The tests cover:
 - Queued conversions are removed when the client aborts.
 - Running conversions close their active page when the client aborts.
 - Running conversions time out and close their active page.
+- Puppeteer remains the default PDF engine.
+- Playwright can be selected with `PDF_ENGINE=playwright` for comparison benchmarking.
 - `waitUntil` is passed only to `page.setContent()`.
 - PDF options are passed only to `page.pdf()`.
 - Chromium is relaunched after a browser disconnect.
@@ -83,7 +85,7 @@ The request path now looks like this:
 
 ```text
 process -> shared Chromium
-request -> new page -> set HTML -> generate PDF -> close page
+request -> new context -> new page -> set HTML -> generate PDF -> close page/context
 ```
 
 The implementation now:
@@ -91,13 +93,16 @@ The implementation now:
 - lazily launches Chromium on the first conversion
 - stores the launch promise so concurrent requests do not trigger duplicate launches
 - reuses the same browser for later conversions
-- creates a fresh page for each conversion
-- closes the page after each conversion using `finally()`
+- creates a fresh browser context and page for each conversion where the selected engine supports contexts
+- closes the request-owned page/context after each conversion using `finally()`
 - keeps the browser open between requests
 - exposes `PDFConverterModel.close()` for tests and future graceful shutdown handling
 - clears the cached browser when Puppeteer emits `disconnected`, allowing a later request to relaunch Chromium
+- normalizes unclassified browser launch failures to `PdfEngineUnavailable` with a `503` response
 
 This removes repeated Chromium startup and shutdown from the per-request hot path.
+
+The application also registers `SIGTERM` and `SIGINT` handlers in `index.js` so the HTTP server stops accepting new connections and the shared browser is closed before the process exits.
 
 ### 4. Clarified Option Handling
 
@@ -155,7 +160,35 @@ Client abort handling is now request-aware:
 
 The converter also logs conversion timings through the request logger, including queue wait, active count, queued count, browser acquisition, page creation, `setContent`, `page.pdf`, page close, total time, and error code when present.
 
-### 7. Documented Baseline And Results
+### 7. Added A Configurable PDF Engine
+
+Added `playwright-core` as an alternative Chromium automation library while keeping Puppeteer as the default production path.
+
+The service now reads:
+
+```text
+PDF_ENGINE
+PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
+```
+
+Supported values are:
+
+- `PDF_ENGINE=puppeteer`
+- `PDF_ENGINE=playwright`
+
+Both engines preserve the existing `/convert` API behavior and use Chromium to generate PDFs. The converter selects the engine through a small adapter layer, so browser launch, page creation, PDF generation, and cleanup continue to flow through the same service-owned queue, timeout, abort handling, and timing log path.
+
+Puppeteer remains the default because it is the existing behavior and has already shown a significant improvement after browser reuse. Playwright is introduced for controlled benchmarking rather than as an immediate replacement.
+
+When the Playwright engine is selected, it uses `playwright-core` and an existing Chromium executable. The executable path resolution order is:
+
+1. `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`
+2. `PUPPETEER_EXECUTABLE_PATH`
+3. Puppeteer's installed executable path
+
+This avoids downloading a second browser while allowing local and container benchmarks to compare Playwright against Puppeteer with the same browser family.
+
+### 8. Documented Baseline And Results
 
 Updated `PERFORMANCE_BASELINE.md` with:
 
@@ -175,7 +208,7 @@ LOG_LEVEL=silent ./node_modules/.bin/mocha test/unit/models/converter.js
 Result:
 
 ```text
-11 passing
+13 passing
 ```
 
 The route integration tests passed:
@@ -199,7 +232,7 @@ yarn test
 Result:
 
 ```text
-32 passing
+34 passing
 lint passed with 0 errors
 ```
 
@@ -224,6 +257,17 @@ After adding the default `PDF_CONCURRENCY=2` limit, a fresh-process run with 30 
 
 This confirms that queued conversions complete successfully when client concurrency is higher than the active PDF conversion limit.
 
+A local sweep tested `PDF_CONCURRENCY` candidates `1-4` with `30` requests at client concurrency `5`:
+
+| PDF_CONCURRENCY | Avg Latency | P95 Latency | Throughput | Status |
+| ---: | ---: | ---: | ---: | --- |
+| `1` | `1074.34ms` | `1184.42ms` | `4.35 req/s` | 30 x `201` |
+| `2` | `894.95ms` | `1292.6ms` | `5.32 req/s` | 30 x `201` |
+| `3` | `829.09ms` | `1124.25ms` | `5.86 req/s` | 30 x `201` |
+| `4` | `787.33ms` | `1115.88ms` | `6.17 req/s` | 30 x `201` |
+
+The local result suggests throughput continues improving up to `4`, but the default remains `2` until the same sweep is repeated inside production-like container CPU and memory limits.
+
 The overload and timeout paths are covered by integration tests that verify explicit `503` and `504` responses.
 
 The improvement is roughly:
@@ -243,17 +287,26 @@ The main latency savings come from removing repeated:
 - Puppeteer browser connection setup
 - Chromium shutdown
 
-The service still creates a fresh page per request, so conversions remain isolated at the page level while avoiding the largest repeated cost.
+The service still creates request-owned browser resources, so conversions remain isolated while avoiding the largest repeated cost.
+
+## Docker Runtime Cleanup
+
+The Dockerfile now avoids `apk update && apk upgrade` package churn and installs the required Chromium/browser dependencies directly with `apk add --no-cache`. The build also runs `/usr/bin/chromium-browser --version` after creating the expected executable path, so the image records and validates the system Chromium binary during build.
 
 ## Remaining Recommended Next Step
 
-Benchmark the bounded concurrency behavior under higher request pressure.
+Benchmark Puppeteer and Playwright with the same representative fixtures.
 
 Recommended scenarios:
 
 ```bash
+APP_PORT=18080 PDF_ENGINE=puppeteer LOG_LEVEL=silent yarn start
 yarn benchmark --url http://localhost:18080/convert --requests 30 --concurrency 5
-yarn benchmark --url http://localhost:18080/convert --requests 30 --concurrency 10
+
+APP_PORT=18080 PDF_ENGINE=playwright LOG_LEVEL=silent yarn start
+yarn benchmark --url http://localhost:18080/convert --requests 30 --concurrency 5
 ```
 
-Run these with the default `PDF_CONCURRENCY=2`, then compare with a higher value such as `PDF_CONCURRENCY=3` or `PDF_CONCURRENCY=4` to find the best trade-off for the target container size.
+Compare latency, throughput, memory, error rate, and generated PDF output. Only switch the default engine if Playwright shows a measurable benefit while preserving output compatibility for real form templates.
+
+The remaining unimplemented measurement task is to run the production container with realistic CPU/memory limits and compare `/dev/shm` behavior before changing `--disable-dev-shm-usage` or increasing the default concurrency.

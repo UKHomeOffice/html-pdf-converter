@@ -17,6 +17,7 @@ const config = {
   env: process.env.NODE_ENV,
   loglevel: process.env.LOG_LEVEL,
   limit: process.env.BODY_SIZE_LIMIT || '2mb',
+  pdfEngine: process.env.PDF_ENGINE || 'puppeteer',
   pdfConcurrency: positiveInteger(process.env.PDF_CONCURRENCY, 2),
   pdfQueueSize: positiveInteger(process.env.PDF_QUEUE_SIZE, 20),
   pdfTimeoutMs: positiveInteger(process.env.PDF_TIMEOUT_MS, 30000)
