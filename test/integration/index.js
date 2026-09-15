@@ -8,6 +8,7 @@ const mustache = require('mustache');
 const path = require('path');
 const fs = require('fs');
 const fixtures = path.resolve(__dirname, '../fixtures');
+const Converter = require('../../models/converter');
 
 const template = fs.readFileSync(`${fixtures}/template.html`, 'utf-8');
 const mustacheTemplate = fs.readFileSync(`${fixtures}/mustache.html`, 'utf-8');
@@ -25,6 +26,7 @@ describe('POSTing to /convert', () => {
     const clientStub = {
       close: sinon.stub().resolves(),
       newPage: sinon.stub().resolves({
+        close: sinon.stub().resolves(),
         setContent: setContentStub,
         pdf: pdfStub
       })
@@ -33,7 +35,8 @@ describe('POSTing to /convert', () => {
     sinon.spy(mustache, 'render');
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    await Converter.close();
     puppeteer.launch.restore();
     mustache.render.restore();
   });

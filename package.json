@@ -16,6 +16,7 @@
   "scripts": {
     "start": "node .",
     "dev": "nodemon -r dotenv/config",
+    "benchmark": "node scripts/benchmark.js",
     "unit": "LOG_LEVEL=silent mocha",
     "lint": "eslint . --config ./node_modules/eslint-config-hof/default.js",
     "test": "yarn run unit && yarn run lint"
