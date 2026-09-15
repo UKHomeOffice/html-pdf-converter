@@ -5,6 +5,23 @@ const sinon = require('sinon');
 const puppeteer = require('puppeteer');
 const Converter = require('../../../models/converter');
 
+const deferred = () => {
+  let resolve;
+  const promise = new Promise(done => {
+    resolve = done;
+  });
+
+  return { promise, resolve };
+};
+
+const createPage = pdfResult => ({
+  close: sinon.stub().resolves(),
+  setContent: sinon.stub().resolves(),
+  pdf: sinon.stub().returns(pdfResult)
+});
+
+const waitForQueue = () => Promise.resolve().then(() => Promise.resolve());
+
 describe('models/converter', () => {
   const html = '<p>Hello</p>';
   const result = Buffer.from('pdf');
@@ -27,6 +44,9 @@ describe('models/converter', () => {
 
   afterEach(async () => {
     await Converter.close();
+    Converter.concurrency = null;
+    Converter.queueSize = null;
+    Converter.timeoutMs = null;
     puppeteer.launch.restore();
   });
 
@@ -94,5 +114,113 @@ describe('models/converter', () => {
     await converter.create(html);
 
     assert.equal(puppeteer.launch.callCount, 2);
+  });
+
+  it('limits active conversions to the configured concurrency', async () => {
+    Converter.concurrency = 1;
+    const firstPdf = deferred();
+    const firstPage = createPage(firstPdf.promise);
+    const secondPage = createPage(Promise.resolve(result));
+    browser.newPage.onFirstCall().resolves(firstPage);
+    browser.newPage.onSecondCall().resolves(secondPage);
+
+    const converter = new Converter();
+    const firstConversion = converter.create(html);
+    const secondConversion = converter.create(html);
+
+    await waitForQueue();
+
+    assert.equal(browser.newPage.callCount, 1);
+
+    firstPdf.resolve(result);
+    await firstConversion;
+    await secondConversion;
+
+    assert.equal(browser.newPage.callCount, 2);
+    assert(firstPage.close.calledOnce);
+    assert(secondPage.close.calledOnce);
+  });
+
+  it('rejects new conversions when the queue is full', async () => {
+    Converter.concurrency = 1;
+    Converter.queueSize = 1;
+    const firstPdf = deferred();
+    browser.newPage.onFirstCall().resolves(createPage(firstPdf.promise));
+
+    const converter = new Converter();
+    const firstConversion = converter.create(html);
+    const queuedConversion = converter.create(html);
+
+    await waitForQueue();
+
+    await assert.rejects(
+      () => converter.create(html),
+      error => error.code === 'PdfQueueFull' && error.status === 503
+    );
+
+    firstPdf.resolve(result);
+    await firstConversion;
+    await queuedConversion;
+  });
+
+  it('removes queued conversions when the client aborts', async () => {
+    Converter.concurrency = 1;
+    Converter.queueSize = 1;
+    const firstPdf = deferred();
+    browser.newPage.onFirstCall().resolves(createPage(firstPdf.promise));
+    browser.newPage.onSecondCall().resolves(createPage(Promise.resolve(result)));
+    const abortController = new AbortController();
+
+    const converter = new Converter();
+    const firstConversion = converter.create(html);
+    const queuedConversion = converter.create(html, null, { signal: abortController.signal });
+
+    await waitForQueue();
+    const queuedError = assert.rejects(queuedConversion, error => error.code === 'ClientAborted');
+    abortController.abort();
+    await queuedError;
+
+    const replacementConversion = converter.create(html);
+    firstPdf.resolve(result);
+    await firstConversion;
+    await replacementConversion;
+
+    assert.equal(browser.newPage.callCount, 2);
+  });
+
+  it('closes the running page when the client aborts', async () => {
+    const pdf = deferred();
+    const runningPage = createPage(pdf.promise);
+    const abortController = new AbortController();
+    browser.newPage.resolves(runningPage);
+
+    const converter = new Converter();
+    const conversion = converter.create(html, null, { signal: abortController.signal });
+
+    await waitForQueue();
+    const aborted = assert.rejects(conversion, error => error.code === 'ClientAborted');
+    abortController.abort();
+
+    await aborted;
+    assert(runningPage.close.calledOnce);
+  });
+
+  it('times out running conversions and closes the page', async () => {
+    Converter.timeoutMs = 1;
+    const clock = sinon.useFakeTimers();
+    const pdf = deferred();
+    const runningPage = createPage(pdf.promise);
+    browser.newPage.resolves(runningPage);
+
+    const converter = new Converter();
+    const conversion = converter.create(html);
+
+    await waitForQueue();
+    const timedOut = assert.rejects(conversion, error => error.code === 'PdfConversionTimeout' && error.status === 504);
+    await clock.tickAsync(1);
+
+    await timedOut;
+    assert(runningPage.close.calledOnce);
+    clock.restore();
   });
 });

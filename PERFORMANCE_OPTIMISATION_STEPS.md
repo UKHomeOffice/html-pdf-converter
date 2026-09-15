@@ -64,6 +64,11 @@ The tests cover:
 - A new page is created per conversion.
 - The page closes after successful PDF generation.
 - The page closes when PDF generation fails.
+- Active conversions are limited by the configured concurrency.
+- New conversions are rejected with `503` when the queue is full.
+- Queued conversions are removed when the client aborts.
+- Running conversions close their active page when the client aborts.
+- Running conversions time out and close their active page.
 - `waitUntil` is passed only to `page.setContent()`.
 - PDF options are passed only to `page.pdf()`.
 - Chromium is relaunched after a browser disconnect.
@@ -120,7 +125,37 @@ The integration tests now:
 
 This keeps route-level tests deterministic while the production code reuses Chromium.
 
-### 6. Documented Baseline And Results
+### 6. Added Bounded Concurrency
+
+Added a configurable concurrency limit around PDF conversion work.
+
+The service now reads:
+
+```text
+PDF_CONCURRENCY
+PDF_QUEUE_SIZE
+PDF_TIMEOUT_MS
+```
+
+The default is `2` active conversions per service process.
+
+The converter now queues work before entering Puppeteer, so no more than the configured number of conversions can actively create pages and generate PDFs at the same time. Once a conversion succeeds or fails, its slot is released and the next queued conversion starts.
+
+This helps avoid CPU and memory saturation when multiple requests arrive together. Browser reuse improves warm latency, while bounded concurrency makes latency more predictable under burst traffic.
+
+The queue is capped by `PDF_QUEUE_SIZE`, which defaults to `20`. If the queue is full, the converter rejects the request with `PdfQueueFull` and the route returns `503`.
+
+The service-owned timeout is controlled by `PDF_TIMEOUT_MS`, which defaults to `30000`. The timeout covers both queued and running conversions. Timed-out conversions reject with `PdfConversionTimeout` and the route returns `504`.
+
+Client abort handling is now request-aware:
+
+- queued conversions are removed if the client disconnects before they start
+- running conversions close their active page if the client disconnects during rendering
+- completed responses remove their abort listeners before sending the PDF
+
+The converter also logs conversion timings through the request logger, including queue wait, active count, queued count, browser acquisition, page creation, `setContent`, `page.pdf`, page close, total time, and error code when present.
+
+### 7. Documented Baseline And Results
 
 Updated `PERFORMANCE_BASELINE.md` with:
 
@@ -140,7 +175,7 @@ LOG_LEVEL=silent ./node_modules/.bin/mocha test/unit/models/converter.js
 Result:
 
 ```text
-6 passing
+11 passing
 ```
 
 The route integration tests passed:
@@ -152,7 +187,7 @@ LOG_LEVEL=silent ./node_modules/.bin/mocha test/integration/index.js
 Result:
 
 ```text
-10 passing
+12 passing
 ```
 
 The full test command passed:
@@ -164,7 +199,7 @@ yarn test
 Result:
 
 ```text
-25 passing
+32 passing
 lint passed with 0 errors
 ```
 
@@ -180,6 +215,16 @@ Using the same local benchmark fixture, browser reuse produced the following imp
 | 10 requests, concurrency 2 | `1188.81ms` | `2065.18ms` | `236.39ms` | `417.66ms` |
 
 This confirms that repeated Chromium startup was the dominant local bottleneck for the benchmark fixture.
+
+After adding the default `PDF_CONCURRENCY=2` limit, a fresh-process run with 30 requests at client concurrency `5` completed successfully:
+
+| Scenario | Avg Latency | P95 Latency | Status |
+| --- | ---: | ---: | --- |
+| 30 requests, client concurrency 5, `PDF_CONCURRENCY=2` | `537.97ms` | `656.27ms` | 30 x `201` |
+
+This confirms that queued conversions complete successfully when client concurrency is higher than the active PDF conversion limit.
+
+The overload and timeout paths are covered by integration tests that verify explicit `503` and `504` responses.
 
 The improvement is roughly:
 
@@ -202,16 +247,13 @@ The service still creates a fresh page per request, so conversions remain isolat
 
 ## Remaining Recommended Next Step
 
-Add bounded concurrency around PDF generation.
+Benchmark the bounded concurrency behavior under higher request pressure.
 
-Browser reuse improves warm latency, but `page.pdf()` is still CPU and memory intensive. Without a concurrency limit, a burst of requests can still overload the single service process or shared browser.
+Recommended scenarios:
 
-Recommended next implementation:
+```bash
+yarn benchmark --url http://localhost:18080/convert --requests 30 --concurrency 5
+yarn benchmark --url http://localhost:18080/convert --requests 30 --concurrency 10
+```
 
-- add a configurable `PDF_CONCURRENCY` setting
-- default to a conservative value, such as `2`
-- queue additional conversions when the limit is reached
-- test that queued requests release their slot after success or failure
-- benchmark higher concurrency again, for example concurrency `5` or `10`
-
-This should make p95 and p99 latency more predictable under production-like bursts.
+Run these with the default `PDF_CONCURRENCY=2`, then compare with a higher value such as `PDF_CONCURRENCY=3` or `PDF_CONCURRENCY=4` to find the best trade-off for the target container size.

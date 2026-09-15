@@ -128,6 +128,25 @@ These can be set on a per-request basis by passing a `pdfOptions` object as part
 }
 ```
 
+## Performance
+
+The converter keeps a shared Chromium browser alive for the lifetime of the service process. Each request creates a fresh page, renders the supplied HTML, generates the PDF, and closes only that page. This avoids launching and closing Chromium for every request while keeping request-level page isolation.
+
+PDF generation is also protected by a bounded in-process queue. The `PDF_CONCURRENCY` environment variable controls how many conversions can actively use Chromium at the same time. Additional requests wait for the next available conversion slot.
+
+The queue also has a configurable maximum size. If the queue is full, the service returns `503` with `PdfQueueFull` so callers can retry later instead of waiting indefinitely. Each conversion has a service-owned timeout controlled by `PDF_TIMEOUT_MS`; timed-out conversions return `504` with `PdfConversionTimeout`.
+
+If the client disconnects while a request is queued, the queued conversion is removed. If the client disconnects while Chromium is rendering, the service closes the active page to stop wasting work. Conversion timing logs include active and queued counts plus timings for browser acquisition, page creation, HTML content loading, PDF generation, and page cleanup.
+
+The local benchmark harness can be used to compare latency changes:
+
+```bash
+APP_PORT=18080 LOG_LEVEL=silent yarn start
+yarn benchmark --url http://localhost:18080/convert --requests 30 --concurrency 5
+```
+
+Implementation notes and measured local results are documented in `PERFORMANCE_OPTIMISATION_STEPS.md` and `PERFORMANCE_BASELINE.md`.
+
 ## External Resources
 
 This service cannot resolve external resources such as linked CSS, JavaScript or images.
@@ -138,6 +157,9 @@ If your template includes links to any of these resources, we suggest you use [h
 ```bash
 APP_PORT:    Defaults to 8080
 APP_HOST:    Defaults to 'localhost'
+PDF_CONCURRENCY: Defaults to 2. Maximum number of active PDF conversions per service process.
+PDF_QUEUE_SIZE: Defaults to 20. Maximum number of queued PDF conversions waiting for an active slot.
+PDF_TIMEOUT_MS: Defaults to 30000. Maximum time allowed for a queued or running PDF conversion.
 ```
 
 ## Troubleshooting

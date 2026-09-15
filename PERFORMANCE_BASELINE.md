@@ -33,7 +33,9 @@ The cheapest check to confirm or disprove this is to measure cold and warm reque
 
 The service already uses `churchill`, which logs request-level `response_time`. This is useful for external response time, but it does not currently show where time is spent inside the conversion pipeline.
 
-Recommended timing points:
+The converter now also emits request-scoped conversion timings through `req.log('debug', ...)` after each successful or failed conversion.
+
+Timing points:
 
 - total `/convert` response time
 - request validation time
@@ -43,7 +45,10 @@ Recommended timing points:
 - `page.setContent()` time
 - `page.pdf()` time
 - page close time
-- queue wait time, if bounded concurrency is added
+- queue wait time
+- active conversion count
+- queued conversion count
+- error code, if conversion failed
 
 ## Baseline Measurement Plan
 
@@ -221,12 +226,54 @@ yarn benchmark --url http://localhost:18080/convert --requests 10 --concurrency 
 
 ### Before And After Comparison
 
-| Scenario | Before Avg | Before P95 | After Avg | After P95 |
-| --- | ---: | ---: | ---: | ---: |
-| 10 requests, concurrency 1 | `760.13ms` | `791.55ms` | `150.12ms` | `157.41ms` |
-| 10 requests, concurrency 2 | `1188.81ms` | `2065.18ms` | `236.39ms` | `417.66ms` |
+| Scenario | Before Avg | After Avg | Avg Difference | Avg Improvement | Before P95 | After P95 | P95 Difference | P95 Improvement | Throughput Change |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 10 requests, concurrency 1 | `760.13ms` | `150.12ms` | `610.01ms faster` | `80.25%` | `791.55ms` | `157.41ms` | `634.14ms faster` | `80.11%` | `1.32 -> 6.66 req/s` |
+| 10 requests, concurrency 2 | `1188.81ms` | `236.39ms` | `952.42ms faster` | `80.12%` | `2065.18ms` | `417.66ms` | `1647.52ms faster` | `79.77%` | `1.64 -> 8.17 req/s` |
 
-The first optimization confirms that repeated Chromium startup was the dominant local bottleneck for the benchmark fixture. Sequential average latency improved by about `80%`, and low-concurrency p95 latency improved by about `80%`.
+The first optimization confirms that repeated Chromium startup was the dominant local bottleneck for the benchmark fixture. Sequential average latency improved by about `610ms` per request, and low-concurrency p95 latency improved by about `1.65s`.
+
+In practical terms, the local benchmark moved from roughly `760ms` average sequential conversion time to roughly `150ms`, with throughput increasing from `1.32` requests per second to `6.66` requests per second.
+
+## Post Bounded Concurrency Baseline
+
+Captured on 2026-09-15 after adding the default `PDF_CONCURRENCY=2` limit around active PDF conversions.
+
+An older local `node` listener on port `18080` was cleared before this run so the benchmark targeted a fresh process from the current branch.
+
+The converter service was started with:
+
+```bash
+APP_PORT=18080 LOG_LEVEL=silent yarn start
+```
+
+### Higher Client Concurrency With Default PDF_CONCURRENCY
+
+```bash
+yarn benchmark --url http://localhost:18080/convert --requests 30 --concurrency 5
+```
+
+```json
+{
+  "durationSeconds": 3.38,
+  "requestsPerSecond": 8.87,
+  "latencyMs": {
+    "requests": 30,
+    "failures": 0,
+    "min": 243.15,
+    "max": 717.66,
+    "avg": 537.97,
+    "p50": 549.26,
+    "p95": 656.27,
+    "p99": 717.66
+  },
+  "statuses": {
+    "201": 30
+  }
+}
+```
+
+This run confirms that queued conversions complete successfully under client concurrency higher than the configured active PDF conversion limit.
 
 ## Optimization Plan
 
@@ -249,11 +296,15 @@ This should remove the most expensive repeated startup cost from the hot path.
 
 PDF generation is CPU and memory intensive. A shared browser should be protected with a configurable concurrency limit.
 
-Proposed setting:
+Implemented setting:
 
 - `PDF_CONCURRENCY`, defaulting to a conservative value such as `2`
+- `PDF_QUEUE_SIZE`, defaulting to `20`
+- `PDF_TIMEOUT_MS`, defaulting to `30000`
 
-This should prevent the service from accepting too many simultaneous browser page renders and causing high latency or container instability.
+This prevents the service from running too many simultaneous browser page renders and causing high latency or container instability under burst traffic.
+
+If the queue is full, the service returns `503` with `PdfQueueFull`. If a conversion exceeds the service-owned timeout, the service returns `504` with `PdfConversionTimeout`. If the client disconnects, queued conversions are removed and running conversions close their active page.
 
 ### 3. Clarify PDF Options Handling
 

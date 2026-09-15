@@ -9,7 +9,9 @@ module.exports = (error, req, res, next) => {
     error.code = 'ChromeConnectionRefused';
     error.message = 'Ensure Chrome Headless is running';
   }
-  if (error.code) {
+  if (error.status) {
+    res.status(error.status);
+  } else if (error.code) {
     res.status(400);
   } else {
     res.status(500);
