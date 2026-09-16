@@ -64,11 +64,6 @@ The tests cover:
 - A new browser context and page are created per conversion where the selected engine supports contexts.
 - The page closes after successful PDF generation.
 - The page closes when PDF generation fails.
-- Active conversions are limited by the configured concurrency.
-- New conversions are rejected with `503` when the queue is full.
-- Queued conversions are removed when the client aborts.
-- Running conversions close their active page when the client aborts.
-- Running conversions time out and close their active page.
 - Puppeteer remains the default PDF engine.
 - Playwright can be selected with `PDF_ENGINE=playwright` for comparison benchmarking.
 - `waitUntil` is passed only to `page.setContent()`.
@@ -130,37 +125,7 @@ The integration tests now:
 
 This keeps route-level tests deterministic while the production code reuses Chromium.
 
-### 6. Added Bounded Concurrency
-
-Added a configurable concurrency limit around PDF conversion work.
-
-The service now reads:
-
-```text
-PDF_CONCURRENCY
-PDF_QUEUE_SIZE
-PDF_TIMEOUT_MS
-```
-
-The default is `2` active conversions per service process.
-
-The converter now queues work before entering Puppeteer, so no more than the configured number of conversions can actively create pages and generate PDFs at the same time. Once a conversion succeeds or fails, its slot is released and the next queued conversion starts.
-
-This helps avoid CPU and memory saturation when multiple requests arrive together. Browser reuse improves warm latency, while bounded concurrency makes latency more predictable under burst traffic.
-
-The queue is capped by `PDF_QUEUE_SIZE`, which defaults to `20`. If the queue is full, the converter rejects the request with `PdfQueueFull` and the route returns `503`.
-
-The service-owned timeout is controlled by `PDF_TIMEOUT_MS`, which defaults to `30000`. The timeout covers both queued and running conversions. Timed-out conversions reject with `PdfConversionTimeout` and the route returns `504`.
-
-Client abort handling is now request-aware:
-
-- queued conversions are removed if the client disconnects before they start
-- running conversions close their active page if the client disconnects during rendering
-- completed responses remove their abort listeners before sending the PDF
-
-The converter also logs conversion timings through the request logger, including queue wait, active count, queued count, browser acquisition, page creation, `setContent`, `page.pdf`, page close, total time, and error code when present.
-
-### 7. Added A Configurable PDF Engine
+### 6. Added A Configurable PDF Engine
 
 Added `playwright-core` as an alternative Chromium automation library while keeping Puppeteer as the default production path.
 
@@ -176,7 +141,7 @@ Supported values are:
 - `PDF_ENGINE=puppeteer`
 - `PDF_ENGINE=playwright`
 
-Both engines preserve the existing `/convert` API behavior and use Chromium to generate PDFs. The converter selects the engine through a small adapter layer, so browser launch, page creation, PDF generation, and cleanup continue to flow through the same service-owned queue, timeout, abort handling, and timing log path.
+Both engines preserve the existing `/convert` API behavior and use Chromium to generate PDFs. The converter selects the engine through a small adapter layer, so browser launch, page creation, PDF generation, and cleanup flow through the same timing log path.
 
 Puppeteer remains the default because it is the existing behavior and has already shown a significant improvement after browser reuse. Playwright is introduced for controlled benchmarking rather than as an immediate replacement.
 
@@ -188,7 +153,7 @@ When the Playwright engine is selected, it uses `playwright-core` and an existin
 
 This avoids downloading a second browser while allowing local and container benchmarks to compare Playwright against Puppeteer with the same browser family.
 
-### 8. Documented Baseline And Results
+### 7. Documented Baseline And Results
 
 Updated `PERFORMANCE_BASELINE.md` with:
 
@@ -249,26 +214,7 @@ Using the same local benchmark fixture, browser reuse produced the following imp
 
 This confirms that repeated Chromium startup was the dominant local bottleneck for the benchmark fixture.
 
-After adding the default `PDF_CONCURRENCY=2` limit, a fresh-process run with 30 requests at client concurrency `5` completed successfully:
-
-| Scenario | Avg Latency | P95 Latency | Status |
-| --- | ---: | ---: | --- |
-| 30 requests, client concurrency 5, `PDF_CONCURRENCY=2` | `537.97ms` | `656.27ms` | 30 x `201` |
-
-This confirms that queued conversions complete successfully when client concurrency is higher than the active PDF conversion limit.
-
-A local sweep tested `PDF_CONCURRENCY` candidates `1-4` with `30` requests at client concurrency `5`:
-
-| PDF_CONCURRENCY | Avg Latency | P95 Latency | Throughput | Status |
-| ---: | ---: | ---: | ---: | --- |
-| `1` | `1074.34ms` | `1184.42ms` | `4.35 req/s` | 30 x `201` |
-| `2` | `894.95ms` | `1292.6ms` | `5.32 req/s` | 30 x `201` |
-| `3` | `829.09ms` | `1124.25ms` | `5.86 req/s` | 30 x `201` |
-| `4` | `787.33ms` | `1115.88ms` | `6.17 req/s` | 30 x `201` |
-
-The local result suggests throughput continues improving up to `4`, but the default remains `2` until the same sweep is repeated inside production-like container CPU and memory limits.
-
-The overload and timeout paths are covered by integration tests that verify explicit `503` and `504` responses.
+Bounded concurrency, queueing, and service-owned conversion timeouts were investigated but backed out. They changed runtime behavior and introduced extra operational tuning requirements for little benefit compared with browser reuse.
 
 The improvement is roughly:
 
@@ -309,4 +255,4 @@ yarn benchmark --url http://localhost:18080/convert --requests 30 --concurrency 
 
 Compare latency, throughput, memory, error rate, and generated PDF output. Only switch the default engine if Playwright shows a measurable benefit while preserving output compatibility for real form templates.
 
-The remaining unimplemented measurement task is to run the production container with realistic CPU/memory limits and compare `/dev/shm` behavior before changing `--disable-dev-shm-usage` or increasing the default concurrency.
+The remaining unimplemented measurement task is to run the production container with realistic CPU/memory limits and compare `/dev/shm` behavior before changing `--disable-dev-shm-usage`.

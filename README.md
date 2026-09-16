@@ -35,6 +35,22 @@ Observe following in terminal:
 2023-09-13T11:18:07.061Z - info: Listening on localhost:8080
 ```
 
+To check that the image can launch Chromium and render a PDF without involving a consuming service, run:
+
+```bash
+docker run --rm quay.io/ukhomeofficedigital/html-pdf-converter:**<tag>** yarn smoke:pdf
+```
+
+The smoke command returns JSON with `ok`, `engine`, `elapsedMs` and `bytes`. If `ok` is `false`, the response includes the Chromium/PDF engine error details needed to debug the image runtime.
+
+To replay the exact payload sent by a consuming service against a local or containerized converter, save the request JSON to a file and run:
+
+```bash
+yarn replay --fixture ./consumer-payload.json --url http://localhost:8082/convert --output ./consumer-payload.pdf
+```
+
+The replay command writes the PDF when the response succeeds. On failure, it prints the HTTP status, content type, elapsed time, body size and JSON error body.
+
 Note: The terminal will say that the application is listening on port 8080, however you can verify which port the html-pdf-converter container is using by running:
 
 ```bash
@@ -145,11 +161,7 @@ When `PDF_ENGINE=playwright` is used, the service uses `playwright-core` with an
 
 The converter keeps a shared Chromium browser alive for the lifetime of the service process. Each request creates a fresh browser context and page where the selected engine supports it, renders the supplied HTML, generates the PDF, and closes the request-owned page/context. This avoids launching and closing Chromium for every request while keeping request-level isolation.
 
-PDF generation is also protected by a bounded in-process queue. The `PDF_CONCURRENCY` environment variable controls how many conversions can actively use Chromium at the same time. Additional requests wait for the next available conversion slot.
-
-The queue also has a configurable maximum size. If the queue is full, the service returns `503` with `PdfQueueFull` so callers can retry later instead of waiting indefinitely. Each conversion has a service-owned timeout controlled by `PDF_TIMEOUT_MS`; timed-out conversions return `504` with `PdfConversionTimeout`.
-
-If the client disconnects while a request is queued, the queued conversion is removed. If the client disconnects while Chromium is rendering, the service closes the active page to stop wasting work. Conversion timing logs include active and queued counts plus timings for browser acquisition, page creation, HTML content loading, PDF generation, and page cleanup.
+Conversion timing logs include timings for browser acquisition, page creation, HTML content loading, PDF generation, and page cleanup.
 
 On `SIGTERM` and `SIGINT`, the service stops accepting new connections and closes the shared browser before exiting. Browser launch failures that are not already classified are returned as `503` with `PdfEngineUnavailable`.
 
@@ -174,9 +186,6 @@ APP_PORT:    Defaults to 8080
 APP_HOST:    Defaults to 'localhost'
 PDF_ENGINE: Defaults to 'puppeteer'. Set to 'playwright' to use the Playwright engine.
 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH: Optional Chromium executable path for the Playwright engine.
-PDF_CONCURRENCY: Defaults to 2. Maximum number of active PDF conversions per service process.
-PDF_QUEUE_SIZE: Defaults to 20. Maximum number of queued PDF conversions waiting for an active slot.
-PDF_TIMEOUT_MS: Defaults to 30000. Maximum time allowed for a queued or running PDF conversion.
 ```
 
 ## Troubleshooting

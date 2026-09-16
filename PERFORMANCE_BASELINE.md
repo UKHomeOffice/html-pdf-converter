@@ -45,9 +45,6 @@ Timing points:
 - `page.setContent()` time
 - `page.pdf()` time
 - page/context close time
-- queue wait time
-- active conversion count
-- queued conversion count
 - error code, if conversion failed
 
 ## Baseline Measurement Plan
@@ -235,65 +232,35 @@ The first optimization confirms that repeated Chromium startup was the dominant 
 
 In practical terms, the local benchmark moved from roughly `760ms` average sequential conversion time to roughly `150ms`, with throughput increasing from `1.32` requests per second to `6.66` requests per second.
 
-## Post Bounded Concurrency Baseline
+## LMR Payload Image Memory Check
 
-Captured on 2026-09-15 after adding the default `PDF_CONCURRENCY=2` limit around active PDF conversions.
-
-An older local `node` listener on port `18080` was cleared before this run so the benchmark targeted a fresh process from the current branch.
-
-The converter service was started with:
+Captured on 2026-09-15 against the reported image digest:
 
 ```bash
-APP_PORT=18080 LOG_LEVEL=silent yarn start
+quay.io/ukhomeofficedigital/html-pdf-converter@sha256:b0db962a7306c5166b6d7dcfb25f1aa7dc3e158450ee42299de86663521181ab
 ```
 
-### Higher Client Concurrency With Default PDF_CONCURRENCY
+The LMR consumer sends only `{ "template": html }`. The captured HTML payload was `267023` bytes; serialized as a `/convert` JSON request it was `280629` bytes.
 
-```bash
-yarn benchmark --url http://localhost:18080/convert --requests 30 --concurrency 5
-```
+Direct in-image render using the captured LMR HTML:
 
-```json
-{
-  "durationSeconds": 3.38,
-  "requestsPerSecond": 8.87,
-  "latencyMs": {
-    "requests": 30,
-    "failures": 0,
-    "min": 243.15,
-    "max": 717.66,
-    "avg": 537.97,
-    "p50": 549.26,
-    "p95": 656.27,
-    "p99": 717.66
-  },
-  "statuses": {
-    "201": 30
-  }
-}
-```
+| Container memory | Result | Notes |
+| ---: | --- | --- |
+| unlimited local Docker | success | `53814` PDF bytes, about `4600ms` |
+| `256m` | failed | Puppeteer connection closed during conversion/page cleanup |
+| `384m` | failed | `ProtocolError: Protocol error (Page.printToPDF): Printing failed` |
+| `512m` | success | `53814` PDF bytes, about `6999ms` |
 
-This run confirms that queued conversions complete successfully under client concurrency higher than the configured active PDF conversion limit.
+HTTP `/convert` using the same image and `{ "template": html }`:
 
-## Local PDF_CONCURRENCY Sweep
+| Container memory | Client concurrency | Result | Notes |
+| ---: | ---: | --- | --- |
+| unlimited local Docker | `1` | `201` | `53814` PDF bytes, about `4753ms` |
+| unlimited local Docker | `5` | `201` | 10/10 succeeded, p95 `5574.16ms` |
+| `256m` | `1` | `500` | `TargetCloseError` caused by `ProtocolError`; response time `3689ms` |
+| `512m` | `2` | `201` | 4/4 succeeded, p95 `12625.9ms` |
 
-Captured on 2026-09-15 using `PDF_ENGINE=puppeteer`, `30` requests, client concurrency `5`, and the same benchmark fixture.
-
-Each candidate was run against a fresh service process on port `18082`.
-
-```bash
-APP_PORT=18082 PDF_ENGINE=puppeteer PDF_CONCURRENCY=<candidate> LOG_LEVEL=silent yarn start
-yarn benchmark --url http://localhost:18082/convert --requests 30 --concurrency 5
-```
-
-| PDF_CONCURRENCY | Avg | P50 | P95 | P99 | Throughput | Status |
-| ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| `1` | `1074.34ms` | `1144.63ms` | `1184.42ms` | `1190.51ms` | `4.35 req/s` | 30 x `201` |
-| `2` | `894.95ms` | `874.5ms` | `1292.6ms` | `1308.67ms` | `5.32 req/s` | 30 x `201` |
-| `3` | `829.09ms` | `817.21ms` | `1124.25ms` | `1228.37ms` | `5.86 req/s` | 30 x `201` |
-| `4` | `787.33ms` | `753.46ms` | `1115.88ms` | `1202.67ms` | `6.17 req/s` | 30 x `201` |
-
-This local sweep shows throughput improving up to `PDF_CONCURRENCY=4`, with p95 latency flattening around `3-4`. The default remains `2` until the same sweep is run inside the production-like Docker/container resource limits and memory usage is captured.
+This reproduces the image-level failure shape under constrained memory. For this payload, `256m` and `384m` are not enough for reliable Chromium PDF rendering. `512m` can succeed, but concurrent renders are slow; production-like tests should try higher memory limits where memory is constrained.
 
 ## PDF Engine Comparison Plan
 
@@ -409,21 +376,7 @@ Implemented behavior:
 
 This should remove the most expensive repeated startup cost from the hot path.
 
-### 2. Add Bounded Concurrency
-
-PDF generation is CPU and memory intensive. A shared browser should be protected with a configurable concurrency limit.
-
-Implemented setting:
-
-- `PDF_CONCURRENCY`, defaulting to a conservative value such as `2`
-- `PDF_QUEUE_SIZE`, defaulting to `20`
-- `PDF_TIMEOUT_MS`, defaulting to `30000`
-
-This prevents the service from running too many simultaneous browser page renders and causing high latency or container instability under burst traffic.
-
-If the queue is full, the service returns `503` with `PdfQueueFull`. If a conversion exceeds the service-owned timeout, the service returns `504` with `PdfConversionTimeout`. If the client disconnects, queued conversions are removed and running conversions close their active page.
-
-### 3. Clarify PDF Options Handling
+### 2. Clarify PDF Options Handling
 
 `waitUntil` is currently merged into the options object and passed both to `page.setContent()` and `page.pdf()`. It is a content-loading option, not a PDF option.
 
@@ -434,7 +387,7 @@ Recommended change:
 
 The default is currently `waitUntil: 'load'`. Consider measuring `domcontentloaded` as an alternative, but only change the default if timings and output compatibility support it.
 
-### 4. Consider Blocking External Requests
+### 3. Consider Blocking External Requests
 
 The README states that the service cannot resolve external resources such as linked CSS, JavaScript, or images. If templates accidentally include external resources, rendering may become slower or less predictable.
 

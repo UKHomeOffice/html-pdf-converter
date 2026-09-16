@@ -111,11 +111,11 @@ describe('POSTing to /convert', () => {
     });
   });
 
-  describe('if the converter is overloaded', () => {
+  describe('if the PDF engine fails during conversion', () => {
     it('returns a 503 error', () => {
       const error = new Error();
-      error.code = 'PdfQueueFull';
-      error.message = 'PDF conversion queue is full';
+      error.code = 'PdfEngineFailed';
+      error.message = 'PDF engine failed during conversion';
       error.status = 503;
       createStub = sinon.stub(Converter.prototype, 'create').rejects(error);
 
@@ -124,29 +124,9 @@ describe('POSTing to /convert', () => {
         .send({template: template})
         .expect('Content-type', /json/)
         .expect(503, {
-          code: 'PdfQueueFull',
-          message: 'PDF conversion queue is full',
+          code: 'PdfEngineFailed',
+          message: 'PDF engine failed during conversion',
           status: 503
-        });
-    });
-  });
-
-  describe('if the converter times out', () => {
-    it('returns a 504 error', () => {
-      const error = new Error();
-      error.code = 'PdfConversionTimeout';
-      error.message = 'PDF conversion timed out';
-      error.status = 504;
-      createStub = sinon.stub(Converter.prototype, 'create').rejects(error);
-
-      return supertest(App)
-        .post('/convert')
-        .send({template: template})
-        .expect('Content-type', /json/)
-        .expect(504, {
-          code: 'PdfConversionTimeout',
-          message: 'PDF conversion timed out',
-          status: 504
         });
     });
   });

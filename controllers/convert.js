@@ -13,32 +13,16 @@ module.exports = router.post('/',
     debug('Validated and rendered %s', res.locals.html);
 
     const model = new Model();
-    const abortController = new AbortController();
-    const abort = () => {
-      if (!res.writableEnded) {
-        abortController.abort();
-      }
-    };
-    const cleanup = () => {
-      req.removeListener('aborted', abort);
-      res.removeListener('close', abort);
-    };
-
-    req.on('aborted', abort);
-    res.on('close', abort);
 
     req.log('debug', 'Creating PDF');
 
     model.create(res.locals.html, req.body.pdfOptions, {
-      signal: abortController.signal,
       log: (message, data) => req.log('debug', message, data)
     }).then(data => {
-      cleanup();
       req.log('debug', 'Created PDF');
       res.setHeader('Content-Type', 'octet-stream');
       res.status(201).send(data);
     }).catch(err => {
-      cleanup();
       req.log('error', 'Failed creating PDF', err);
       next(err);
     });
