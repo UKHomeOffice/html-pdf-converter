@@ -9,11 +9,19 @@ module.exports = (error, req, res, next) => {
     error.code = 'ChromeConnectionRefused';
     error.message = 'Ensure Chrome Headless is running';
   }
-  if (error.code) {
-    res.status(400);
+  let status;
+  if (error.status) {
+    status = error.status;
+  } else if (error.code) {
+    status = 400;
   } else {
-    res.status(500);
+    status = 500;
   }
+  res.status(status);
   req.log('error', 'html-pdf-converter: Handling error', error);
-  res.json(error);
+  res.json({
+    code: error.code || 'InternalServerError',
+    message: status < 500 || error.status ? error.message : 'Internal Server Error',
+    ...(error.status && { status: error.status })
+  });
 };

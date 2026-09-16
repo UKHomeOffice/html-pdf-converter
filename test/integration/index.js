@@ -8,6 +8,7 @@ const mustache = require('mustache');
 const path = require('path');
 const fs = require('fs');
 const fixtures = path.resolve(__dirname, '../fixtures');
+const Converter = require('../../models/converter');
 
 const template = fs.readFileSync(`${fixtures}/template.html`, 'utf-8');
 const mustacheTemplate = fs.readFileSync(`${fixtures}/mustache.html`, 'utf-8');
@@ -16,24 +17,37 @@ const App = require('../../');
 const result = Buffer.from('');
 
 describe('POSTing to /convert', () => {
+  let createStub;
   let pdfStub;
   let setContentStub;
 
   beforeEach(() => {
+    Converter.engine = 'puppeteer';
     pdfStub = sinon.stub().resolves(result);
     setContentStub = sinon.stub().resolves();
-    const clientStub = {
+    const contextStub = {
       close: sinon.stub().resolves(),
       newPage: sinon.stub().resolves({
+        close: sinon.stub().resolves(),
         setContent: setContentStub,
         pdf: pdfStub
       })
+    };
+    const clientStub = {
+      close: sinon.stub().resolves(),
+      createBrowserContext: sinon.stub().resolves(contextStub)
     };
     sinon.stub(puppeteer, 'launch').resolves(clientStub);
     sinon.spy(mustache, 'render');
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    await Converter.close();
+    Converter.engine = null;
+    if (createStub) {
+      createStub.restore();
+      createStub = null;
+    }
     puppeteer.launch.restore();
     mustache.render.restore();
   });
@@ -94,6 +108,26 @@ describe('POSTing to /convert', () => {
           message: 'Ensure Chrome Headless is running'
         })
         .expect(res => assert.ok(res.error instanceof Error));
+    });
+  });
+
+  describe('if the PDF engine fails during conversion', () => {
+    it('returns a 503 error', () => {
+      const error = new Error();
+      error.code = 'PdfEngineFailed';
+      error.message = 'PDF engine failed during conversion';
+      error.status = 503;
+      createStub = sinon.stub(Converter.prototype, 'create').rejects(error);
+
+      return supertest(App)
+        .post('/convert')
+        .send({template: template})
+        .expect('Content-type', /json/)
+        .expect(503, {
+          code: 'PdfEngineFailed',
+          message: 'PDF engine failed during conversion',
+          status: 503
+        });
     });
   });
 

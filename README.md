@@ -35,6 +35,22 @@ Observe following in terminal:
 2023-09-13T11:18:07.061Z - info: Listening on localhost:8080
 ```
 
+To check that the image can launch Chromium and render a PDF without involving a consuming service, run:
+
+```bash
+docker run --rm quay.io/ukhomeofficedigital/html-pdf-converter:**<tag>** yarn smoke:pdf
+```
+
+The smoke command returns JSON with `ok`, `engine`, `elapsedMs` and `bytes`. If `ok` is `false`, the response includes the Chromium/PDF engine error details needed to debug the image runtime.
+
+To replay the exact payload sent by a consuming service against a local or containerized converter, save the request JSON to a file and run:
+
+```bash
+yarn replay --fixture ./consumer-payload.json --url http://localhost:8082/convert --output ./consumer-payload.pdf
+```
+
+The replay command writes the PDF when the response succeeds. On failure, it prints the HTTP status, content type, elapsed time, body size and JSON error body.
+
 Note: The terminal will say that the application is listening on port 8080, however you can verify which port the html-pdf-converter container is using by running:
 
 ```bash
@@ -128,6 +144,36 @@ These can be set on a per-request basis by passing a `pdfOptions` object as part
 }
 ```
 
+## PDF Engine
+
+The service uses Puppeteer by default and can optionally use Playwright for comparison benchmarking.
+
+```bash
+PDF_ENGINE=puppeteer
+PDF_ENGINE=playwright
+```
+
+Both engines use Chromium and preserve the same `/convert` request and response contract. Puppeteer remains the default because it is the existing production path. Playwright is available as a configurable alternative so latency and output compatibility can be compared with the same benchmark fixture and real form templates.
+
+When `PDF_ENGINE=playwright` is used, the service uses `playwright-core` with an existing Chromium executable. Set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to override the browser path, otherwise the service uses `PUPPETEER_EXECUTABLE_PATH` or Puppeteer's executable path.
+
+## Performance
+
+The converter keeps a shared Chromium browser alive for the lifetime of the service process. Each request creates a fresh browser context and page where the selected engine supports it, renders the supplied HTML, generates the PDF, and closes the request-owned page/context. This avoids launching and closing Chromium for every request while keeping request-level isolation.
+
+Conversion timing logs include timings for browser acquisition, page creation, HTML content loading, PDF generation, and page cleanup.
+
+On `SIGTERM` and `SIGINT`, the service stops accepting new connections and closes the shared browser before exiting. Browser launch failures that are not already classified are returned as `503` with `PdfEngineUnavailable`.
+
+The local benchmark harness can be used to compare latency changes:
+
+```bash
+APP_PORT=18080 LOG_LEVEL=silent yarn start
+yarn benchmark --url http://localhost:18080/convert --requests 30 --concurrency 5
+```
+
+Implementation notes and measured local results are documented in `PERFORMANCE_OPTIMISATION_STEPS.md` and `PERFORMANCE_BASELINE.md`.
+
 ## External Resources
 
 This service cannot resolve external resources such as linked CSS, JavaScript or images.
@@ -138,6 +184,8 @@ If your template includes links to any of these resources, we suggest you use [h
 ```bash
 APP_PORT:    Defaults to 8080
 APP_HOST:    Defaults to 'localhost'
+PDF_ENGINE: Defaults to 'puppeteer'. Set to 'playwright' to use the Playwright engine.
+PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH: Optional Chromium executable path for the Playwright engine.
 ```
 
 ## Troubleshooting

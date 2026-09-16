@@ -3,14 +3,15 @@ FROM quay.io/ukhomeofficedigital/hof-nodejs:24.19.0-alpine3.24@sha256:a70b2f29d5
 ENV PUPPETEER_SKIP_DOWNLOAD=true \
 	PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
-RUN apk update && apk upgrade \
-	&& apk add --no-cache chromium nss freetype harfbuzz ca-certificates ttf-freefont \
+# Fail the image build if the Chromium executable path used by Puppeteer is not runnable.
+RUN apk add --no-cache chromium nss freetype harfbuzz ca-certificates ttf-freefont \
 	&& rm -rf /usr/local/lib/node_modules/npm /usr/local/bin/npm /usr/local/bin/npx \
 	&& addgroup -S app \
 	&& adduser -S -u 999 -G app -h /app app \
 	&& mkdir -p /app \
 	&& chown -R app:app /app \
-	&& test -x /usr/bin/chromium-browser || ln -s /usr/bin/chromium /usr/bin/chromium-browser
+	&& { test -x /usr/bin/chromium-browser || ln -s /usr/bin/chromium /usr/bin/chromium-browser; } \
+	&& /usr/bin/chromium-browser --version
 
 USER 999
 WORKDIR /app

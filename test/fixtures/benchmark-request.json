@@ -1,0 +1,17 @@
+{
+  "template": "<!doctype html><html><head><meta charset=\"utf-8\"><title>{{title}}</title><style>body{font-family:Arial,sans-serif;font-size:14px;color:#111;margin:32px}.header{border-bottom:2px solid #111;margin-bottom:24px;padding-bottom:16px}.section{margin:18px 0}.label{font-weight:bold;display:inline-block;width:180px}.declaration{margin-top:32px;border-top:1px solid #999;padding-top:16px}</style></head><body><div class=\"header\"><h1>{{title}}</h1><p>{{reference}}</p></div><div class=\"section\"><span class=\"label\">Applicant</span>{{applicantName}}</div><div class=\"section\"><span class=\"label\">Date of birth</span>{{dateOfBirth}}</div><div class=\"section\"><span class=\"label\">Address</span>{{address}}</div><div class=\"section\"><span class=\"label\">Email</span>{{email}}</div><div class=\"section\"><span class=\"label\">Phone</span>{{phone}}</div><div class=\"section\"><h2>Application details</h2><p>{{summary}}</p><p>{{additionalInformation}}</p></div><div class=\"declaration\"><p>I confirm that the information supplied in this form is complete and accurate.</p><p>Signed: {{applicantName}}</p></div></body></html>",
+  "data": {
+    "title": "Example form PDF",
+    "reference": "Reference: PDF-BENCHMARK-001",
+    "applicantName": "Jane Example",
+    "dateOfBirth": "1 January 1990",
+    "address": "2 Marsham Street, London, SW1P 4DF",
+    "email": "jane.example@example.com",
+    "phone": "07123 456789",
+    "summary": "This fixture represents a medium-sized form response used to measure end-to-end PDF conversion latency.",
+    "additionalInformation": "The payload intentionally uses inline styles and Mustache data so the benchmark exercises validation, rendering, Chromium page content loading, and PDF generation without relying on external network resources."
+  },
+  "pdfOptions": {
+    "printBackground": true
+  }
+}
