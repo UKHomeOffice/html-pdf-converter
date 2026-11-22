@@ -17,7 +17,7 @@ Navigate to quay.io/ukhomeofficedigital/html-pdf-converter to find latest the ta
 For example, if the latest tagged version v2.4.3 then this command will need to be run:
 
 ```bash
-docker pull quay.io/ukhomeofficedigital/html-pdf-converter:v3.1.0 
+docker pull quay.io/ukhomeofficedigital/html-pdf-converter:v3.2.0 
 ```
 Once completed you can check the image is available locally by running: 
 ```bash 
@@ -130,15 +130,30 @@ These can be set on a per-request basis by passing a `pdfOptions` object as part
 
 ## External Resources
 
-This service cannot resolve external resources such as linked CSS, JavaScript or images.
-If your template includes links to any of these resources, we suggest you use [https://github.com/remy/inliner](https://github.com/remy/inliner). The source for Inliner can be a URL, a file location or an HTML string.
+Templates should be self-contained. Inline any CSS, and embed images as `data:` URLs. If your template includes links to external resources, we suggest you use [https://github.com/remy/inliner](https://github.com/remy/inliner). The source for Inliner can be a URL, a file location or an HTML string.
+
+By default, Chrome will try to fetch any URL in the template (images, stylesheets, frames, scripts and `file://` paths) from wherever the service is running, and will run any JavaScript in it. If templates can contain user-supplied content, this lets users make the service request internal and external addresses. Use the settings below to prevent it.
 
 ## Environment Variables
 
 ```bash
-APP_PORT:    Defaults to 8080
-APP_HOST:    Defaults to 'localhost'
+APP_PORT:                  Defaults to 8080
+APP_HOST:                  Defaults to 'localhost'
+BLOCK_NETWORK_REQUESTS:    Defaults to 'false'. When 'true', every request made while rendering is blocked, except data: URLs. Blocked URLs are logged as warnings.
+DISABLE_JAVASCRIPT:        Defaults to 'false'. When 'true', JavaScript in the template is not run.
+IGNORE_CERTIFICATE_ERRORS: Defaults to 'true'. When 'false', Chrome no longer ignores HTTPS certificate errors.
+RENDER_TIMEOUT:            Time limit in milliseconds for loading the template and for creating the PDF. Overrides any timeout in pdfOptions. Defaults to Puppeteer's 30 seconds.
 ```
+
+### Recommended configuration for templates containing user content
+
+```bash
+BLOCK_NETWORK_REQUESTS=true
+DISABLE_JAVASCRIPT=true
+IGNORE_CERTIFICATE_ERRORS=false
+```
+
+Request blocking happens inside the browser. Where possible, also deny outbound network access to the service at the platform level, for example with a Kubernetes NetworkPolicy.
 
 ## Troubleshooting
 

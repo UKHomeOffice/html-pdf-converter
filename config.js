@@ -11,7 +11,11 @@ const config = {
   host: process.env.APP_HOST || 'localhost',
   env: process.env.NODE_ENV,
   loglevel: process.env.LOG_LEVEL,
-  limit: process.env.BODY_SIZE_LIMIT || '2mb'
+  limit: process.env.BODY_SIZE_LIMIT || '2mb',
+  blockNetworkRequests: process.env.BLOCK_NETWORK_REQUESTS === 'true',
+  disableJavaScript: process.env.DISABLE_JAVASCRIPT === 'true',
+  ignoreCertificateErrors: process.env.IGNORE_CERTIFICATE_ERRORS !== 'false',
+  renderTimeout: parseInt(process.env.RENDER_TIMEOUT, 10) || undefined
 };
 
 module.exports = config;

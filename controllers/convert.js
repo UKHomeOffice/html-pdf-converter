@@ -12,7 +12,7 @@ module.exports = router.post('/',
   (req, res, next) => {
     debug('Validated and rendered %s', res.locals.html);
 
-    const model = new Model();
+    const model = new Model({ log: (...args) => req.logger.log(...args) });
 
     req.log('debug', 'Creating PDF');
 
